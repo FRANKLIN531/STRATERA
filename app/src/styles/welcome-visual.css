@@ -1,0 +1,420 @@
+.welcome-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.welcome-scene-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(180deg, black 0%, black 70%, transparent 100%);
+}
+
+/* Finance — bar chart + trend line */
+.welcome-scene-finance .welcome-chart {
+  position: absolute;
+  left: 8%;
+  right: 38%;
+  bottom: 18%;
+  height: 52%;
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(8px, 2.5vw, 16px);
+  z-index: 2;
+}
+
+.welcome-chart-bar {
+  flex: 1;
+  max-width: 52px;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.welcome-chart-bar::after {
+  content: '';
+  width: 100%;
+  height: var(--bar-height, 50%);
+  border-radius: 8px 8px 4px 4px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--scene-accent, #0ea5e9) 85%, #fff) 0%, var(--scene-accent, #0ea5e9) 100%);
+  transform-origin: bottom center;
+  transform: scaleY(0);
+  opacity: 0.92;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--scene-accent, #0ea5e9) 35%, transparent);
+}
+
+.welcome-visual-slide.active .welcome-chart-bar::after {
+  animation: welcomeBarGrow 0.75s cubic-bezier(0.34, 1.2, 0.64, 1) var(--bar-delay, 0s) forwards;
+}
+
+.welcome-trend-svg {
+  position: absolute;
+  left: 6%;
+  right: 34%;
+  bottom: 22%;
+  height: 42%;
+  width: auto;
+  z-index: 3;
+  overflow: visible;
+}
+
+.welcome-trend-path {
+  stroke-dasharray: 420;
+  stroke-dashoffset: 420;
+  opacity: 0.85;
+}
+
+.welcome-visual-slide.active .welcome-trend-path {
+  animation: welcomeDrawLine 1.4s ease 0.45s forwards;
+}
+
+.welcome-trend-dot {
+  opacity: 0;
+  transform-origin: center;
+}
+
+.welcome-visual-slide.active .welcome-trend-dot {
+  animation: welcomePopIn 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) 1.7s forwards;
+}
+
+.welcome-finance-doc {
+  position: absolute;
+  right: 8%;
+  top: 22%;
+  width: clamp(120px, 28%, 180px);
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  z-index: 2;
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.welcome-visual-slide.active .welcome-finance-doc {
+  animation: welcomeFadeUp 0.6s ease 0.9s forwards;
+}
+
+.welcome-finance-doc-line {
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  margin-bottom: 10px;
+}
+
+.welcome-finance-doc-line--lg {
+  width: 55%;
+  height: 8px;
+  background: #cbd5e1;
+}
+
+.welcome-finance-doc-line--sm {
+  width: 70%;
+}
+
+.welcome-finance-doc-chip {
+  margin-top: 14px;
+  width: 48%;
+  height: 28px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--scene-accent, #0ea5e9) 18%, #fff);
+  border: 1px solid color-mix(in srgb, var(--scene-accent, #0ea5e9) 30%, #e2e8f0);
+}
+
+/* People — avatars + calendar */
+.welcome-scene-people .welcome-avatar {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25);
+  opacity: 0;
+  transform: scale(0.6);
+  z-index: 2;
+}
+
+.welcome-avatar--outline {
+  background: #fff;
+  border: 3px solid #10b981;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.12);
+}
+
+.welcome-avatar--1 { width: 56px; height: 56px; left: 18%; top: 28%; }
+.welcome-avatar--2 { width: 68px; height: 68px; left: 38%; top: 20%; }
+.welcome-avatar--3 { width: 50px; height: 50px; left: 58%; top: 32%; }
+.welcome-avatar--4 { width: 46px; height: 46px; left: 28%; top: 52%; }
+.welcome-avatar--5 { width: 42px; height: 42px; left: 48%; top: 55%; opacity: 0.75; }
+
+.welcome-visual-slide.active .welcome-avatar--1 { animation: welcomePopIn 0.5s ease 0.1s forwards; }
+.welcome-visual-slide.active .welcome-avatar--2 { animation: welcomePopIn 0.5s ease 0.22s forwards; }
+.welcome-visual-slide.active .welcome-avatar--3 { animation: welcomePopIn 0.5s ease 0.34s forwards; }
+.welcome-visual-slide.active .welcome-avatar--4 { animation: welcomePopIn 0.5s ease 0.46s forwards; }
+.welcome-visual-slide.active .welcome-avatar--5 { animation: welcomePopIn 0.5s ease 0.58s forwards; }
+
+.welcome-people-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.welcome-link-path {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  opacity: 0.45;
+}
+
+.welcome-visual-slide.active .welcome-link-path {
+  animation: welcomeDrawLine 0.9s ease 0.65s forwards;
+}
+
+.welcome-visual-slide.active .welcome-link-path--2 {
+  animation-delay: 0.8s;
+}
+
+.welcome-visual-slide.active .welcome-link-path--3 {
+  animation-delay: 0.95s;
+}
+
+.welcome-people-calendar {
+  position: absolute;
+  right: 8%;
+  top: 24%;
+  width: clamp(110px, 26%, 160px);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  opacity: 0;
+  transform: translateY(14px);
+  z-index: 2;
+}
+
+.welcome-visual-slide.active .welcome-people-calendar {
+  animation: welcomeFadeUp 0.55s ease 0.75s forwards;
+}
+
+.welcome-people-calendar-head {
+  height: 36px;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+  opacity: 0.85;
+}
+
+.welcome-people-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px;
+}
+
+.welcome-people-calendar-cell {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  background: #f1f5f9;
+}
+
+.welcome-people-calendar-cell--active {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+}
+
+/* Platform — hub network + desktops */
+.welcome-scene-platform .welcome-platform-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 72%;
+  z-index: 1;
+}
+
+.welcome-hub-line {
+  stroke-dasharray: 180;
+  stroke-dashoffset: 180;
+  opacity: 0.35;
+}
+
+.welcome-visual-slide.active .welcome-hub-line {
+  animation: welcomeDrawLine 0.7s ease 0.35s forwards;
+}
+
+.welcome-visual-slide.active .welcome-hub-line--2 { animation-delay: 0.45s; }
+.welcome-visual-slide.active .welcome-hub-line--3 { animation-delay: 0.55s; }
+.welcome-visual-slide.active .welcome-hub-line--4 { animation-delay: 0.65s; }
+.welcome-visual-slide.active .welcome-hub-line--5 { animation-delay: 0.75s; }
+
+.welcome-hub {
+  position: absolute;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.welcome-hub--center {
+  width: 56px;
+  height: 56px;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%) scale(0);
+  background: linear-gradient(135deg, var(--scene-accent, #818cf8) 0%, color-mix(in srgb, var(--scene-accent, #818cf8) 75%, #fff) 100%);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--scene-accent, #818cf8) 45%, transparent);
+}
+
+.welcome-visual-slide.active .welcome-hub--center {
+  animation: welcomePopInCenter 0.55s cubic-bezier(0.34, 1.3, 0.64, 1) 0.15s forwards;
+}
+
+.welcome-hub--node {
+  width: 36px;
+  height: 36px;
+  background: color-mix(in srgb, var(--scene-accent, #818cf8) 55%, #fff);
+  border: 2px solid color-mix(in srgb, var(--scene-accent, #818cf8) 45%, #cbd5e1);
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+.welcome-hub--n1 { left: 14%; top: 18%; }
+.welcome-hub--n2 { left: 72%; top: 12%; }
+.welcome-hub--n3 { left: 76%; top: 58%; }
+.welcome-hub--n4 { left: 12%; top: 62%; }
+.welcome-hub--n5 { left: 46%; top: 4%; width: 30px; height: 30px; }
+
+.welcome-visual-slide.active .welcome-hub--n1 { animation: welcomePopIn 0.45s ease 0.5s forwards; }
+.welcome-visual-slide.active .welcome-hub--n2 { animation: welcomePopIn 0.45s ease 0.6s forwards; }
+.welcome-visual-slide.active .welcome-hub--n3 { animation: welcomePopIn 0.45s ease 0.7s forwards; }
+.welcome-visual-slide.active .welcome-hub--n4 { animation: welcomePopIn 0.45s ease 0.8s forwards; }
+.welcome-visual-slide.active .welcome-hub--n5 { animation: welcomePopIn 0.45s ease 0.9s forwards; }
+
+.welcome-platform-desktops {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 10%;
+  display: flex;
+  justify-content: center;
+  gap: clamp(10px, 3vw, 20px);
+  z-index: 2;
+}
+
+.welcome-platform-desktop {
+  flex: 1;
+  max-width: 120px;
+  padding: 10px 8px 8px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.welcome-visual-slide.active .welcome-platform-desktop {
+  animation: welcomeFadeUp 0.5s ease var(--desktop-delay, 0.5s) forwards;
+}
+
+.welcome-platform-desktop-screen {
+  height: 36px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+  border: 1px solid #cbd5e1;
+}
+
+.welcome-platform-desktop span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+@keyframes welcomeBarGrow {
+  from {
+    transform: scaleY(0);
+    opacity: 0.4;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 0.92;
+  }
+}
+
+@keyframes welcomeDrawLine {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes welcomePopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes welcomePopInCenter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes welcomeFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Re-trigger animations when slide becomes active */
+.welcome-visual-slide:not(.active) .welcome-chart-bar::after,
+.welcome-visual-slide:not(.active) .welcome-trend-path,
+.welcome-visual-slide:not(.active) .welcome-trend-dot,
+.welcome-visual-slide:not(.active) .welcome-finance-doc,
+.welcome-visual-slide:not(.active) .welcome-avatar,
+.welcome-visual-slide:not(.active) .welcome-link-path,
+.welcome-visual-slide:not(.active) .welcome-people-calendar,
+.welcome-visual-slide:not(.active) .welcome-hub-line,
+.welcome-visual-slide:not(.active) .welcome-hub,
+.welcome-visual-slide:not(.active) .welcome-platform-desktop {
+  animation: none !important;
+}
+
+.welcome-visual-slide:not(.active) .welcome-hub--center {
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+}
+
+.welcome-visual-slide:not(.active) .welcome-chart-bar::after {
+  transform: scaleY(0);
+}
+
+.welcome-visual-slide:not(.active) .welcome-trend-path {
+  stroke-dashoffset: 420;
+}
+
+.welcome-visual-slide:not(.active) .welcome-link-path {
+  stroke-dashoffset: 200;
+}
+
+.welcome-visual-slide:not(.active) .welcome-hub-line {
+  stroke-dashoffset: 180;
+}

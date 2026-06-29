@@ -1,0 +1,123 @@
+/** SQL Server bootstrap schema — same layout as SQLite with T-SQL types. */
+export const MSSQL_SCHEMA_SQL = `
+IF OBJECT_ID(N'users', N'U') IS NULL
+CREATE TABLE users (
+  id NVARCHAR(64) NOT NULL PRIMARY KEY,
+  email NVARCHAR(255) NOT NULL UNIQUE,
+  password_hash NVARCHAR(MAX) NOT NULL,
+  name NVARCHAR(255) NOT NULL,
+  role NVARCHAR(64) NOT NULL,
+  app_access NVARCHAR(32) NOT NULL DEFAULT 'both',
+  must_change_credentials INT NOT NULL DEFAULT 0
+);
+
+IF OBJECT_ID(N'accounts', N'U') IS NULL
+CREATE TABLE accounts (
+  id NVARCHAR(64) NOT NULL PRIMARY KEY,
+  name NVARCHAR(255) NOT NULL,
+  type NVARCHAR(64) NOT NULL,
+  balance DECIMAL(18, 2) NOT NULL DEFAULT 0,
+  currency NVARCHAR(8) NOT NULL DEFAULT 'USD'
+);
+
+IF OBJECT_ID(N'transactions', N'U') IS NULL
+CREATE TABLE transactions (
+  id NVARCHAR(64) NOT NULL PRIMARY KEY,
+  date NVARCHAR(32) NOT NULL,
+  description NVARCHAR(MAX) NOT NULL,
+  account NVARCHAR(255) NOT NULL,
+  type NVARCHAR(32) NOT NULL,
+  amount DECIMAL(18, 2) NOT NULL,
+  status NVARCHAR(32) NOT NULL DEFAULT 'Completed'
+);
+
+IF OBJECT_ID(N'invoices', N'U') IS NULL
+CREATE TABLE invoices (
+  id NVARCHAR(64) NOT NULL PRIMARY KEY,
+  client NVARCHAR(255) NOT NULL,
+  date NVARCHAR(32) NOT NULL,
+  due_date NVARCHAR(32) NOT NULL,
+  amount DECIMAL(18, 2) NOT NULL,
+  status NVARCHAR(32) NOT NULL DEFAULT 'Draft'
+);
+
+IF OBJECT_ID(N'employees', N'U') IS NULL
+CREATE TABLE employees (
+  id NVARCHAR(64) NOT NULL PRIMARY KEY,
+  name NVARCHAR(255) NOT NULL,
+  department NVARCHAR(128) NOT NULL,
+  role NVARCHAR(128) NOT NULL,
+  email NVARCHAR(255) NOT NULL,
+  status NVARCHAR(32) NOT NULL DEFAULT 'Active',
+  join_date NVARCHAR(32) NOT NULL
+);
+
+IF OBJECT_ID(N'payroll', N'U') IS NULL
+CREATE TABLE payroll (
+  id NVARCHAR(64) NOT NULL PRIMARY KEY,
+  employee NVARCHAR(255) NOT NULL,
+  department NVARCHAR(128) NOT NULL,
+  base_salary DECIMAL(18, 2) NOT NULL,
+  bonus DECIMAL(18, 2) NOT NULL DEFAULT 0,
+  deductions DECIMAL(18, 2) NOT NULL DEFAULT 0,
+  net_pay DECIMAL(18, 2) NOT NULL,
+  status NVARCHAR(32) NOT NULL DEFAULT 'Pending',
+  transaction_id NVARCHAR(64) NULL,
+  processed_date NVARCHAR(32) NULL
+);
+
+IF OBJECT_ID(N'attendance', N'U') IS NULL
+CREATE TABLE attendance (
+  id NVARCHAR(64) NOT NULL PRIMARY KEY,
+  employee NVARCHAR(255) NOT NULL,
+  date NVARCHAR(32) NOT NULL,
+  check_in NVARCHAR(32) NOT NULL,
+  check_out NVARCHAR(32) NOT NULL,
+  hours DECIMAL(10, 2) NOT NULL DEFAULT 0,
+  status NVARCHAR(32) NOT NULL DEFAULT 'Present'
+);
+
+IF OBJECT_ID(N'leave_requests', N'U') IS NULL
+CREATE TABLE leave_requests (
+  id NVARCHAR(64) NOT NULL PRIMARY KEY,
+  employee NVARCHAR(255) NOT NULL,
+  type NVARCHAR(64) NOT NULL,
+  start_date NVARCHAR(32) NOT NULL,
+  end_date NVARCHAR(32) NOT NULL,
+  days INT NOT NULL,
+  status NVARCHAR(32) NOT NULL DEFAULT 'Pending',
+  reason NVARCHAR(MAX) NOT NULL DEFAULT ''
+);
+
+IF OBJECT_ID(N'departments', N'U') IS NULL
+CREATE TABLE departments (
+  id NVARCHAR(64) NOT NULL PRIMARY KEY,
+  name NVARCHAR(128) NOT NULL,
+  head NVARCHAR(255) NOT NULL,
+  employees INT NOT NULL DEFAULT 0,
+  budget DECIMAL(18, 2) NOT NULL DEFAULT 0
+);
+
+IF OBJECT_ID(N'job_positions', N'U') IS NULL
+CREATE TABLE job_positions (
+  id NVARCHAR(64) NOT NULL PRIMARY KEY,
+  title NVARCHAR(128) NOT NULL,
+  department NVARCHAR(128) NOT NULL,
+  level NVARCHAR(64) NOT NULL,
+  min_salary DECIMAL(18, 2) NOT NULL DEFAULT 0,
+  max_salary DECIMAL(18, 2) NOT NULL DEFAULT 0
+);
+
+IF OBJECT_ID(N'employee_messages', N'U') IS NULL
+CREATE TABLE employee_messages (
+  id NVARCHAR(64) NOT NULL PRIMARY KEY,
+  employee NVARCHAR(255) NOT NULL,
+  employee_email NVARCHAR(255) NOT NULL,
+  subject NVARCHAR(512) NOT NULL,
+  body NVARCHAR(MAX) NOT NULL,
+  type NVARCHAR(64) NOT NULL,
+  sent_at NVARCHAR(32) NOT NULL,
+  sent_by NVARCHAR(255) NOT NULL,
+  status NVARCHAR(32) NOT NULL DEFAULT 'Sent'
+);
+`;

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="800" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#001428"/>
+      <stop offset="1" stop-color="#134e4a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#10B981"/>
+      <stop offset="1" stop-color="#34D399"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <circle cx="640" cy="100" r="160" fill="#10B981" opacity="0.1"/>
+  <circle cx="100" cy="500" r="120" fill="#059669" opacity="0.08"/>
+  <!-- People avatars -->
+  <circle cx="280" cy="280" r="56" fill="url(#accent)" opacity="0.9"/>
+  <circle cx="400" cy="240" r="64" fill="rgba(255,255,255,0.15)" stroke="#34D399" stroke-width="3"/>
+  <circle cx="520" cy="300" r="52" fill="url(#accent)" opacity="0.7"/>
+  <circle cx="340" cy="400" r="48" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+  <circle cx="460" cy="420" r="44" fill="url(#accent)" opacity="0.5"/>
+  <!-- Connection lines -->
+  <path d="M280 280 L400 240 L520 300" stroke="#6EE7B7" stroke-width="2" opacity="0.4"/>
+  <path d="M280 280 L340 400 L460 420" stroke="#6EE7B7" stroke-width="2" opacity="0.3"/>
+  <path d="M400 240 L460 420" stroke="#6EE7B7" stroke-width="2" opacity="0.25"/>
+  <!-- Calendar card -->
+  <rect x="540" y="380" width="200" height="160" rx="16" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+  <rect x="540" y="380" width="200" height="44" rx="16" fill="url(#accent)" opacity="0.25"/>
+  <rect x="568" y="448" width="32" height="32" rx="6" fill="rgba(255,255,255,0.1)"/>
+  <rect x="608" y="448" width="32" height="32" rx="6" fill="rgba(255,255,255,0.1)"/>
+  <rect x="652" y="448" width="32" height="32" rx="6" fill="url(#accent)" opacity="0.8"/>
+  <rect x="568" y="492" width="32" height="32" rx="6" fill="rgba(255,255,255,0.08)"/>
+  <rect x="608" y="492" width="32" height="32" rx="6" fill="rgba(255,255,255,0.08)"/>
+</svg>

@@ -1,0 +1,112 @@
+/** PostgreSQL bootstrap schema — portable types, same table layout as SQLite. */
+export const POSTGRES_SCHEMA_SQL = `
+CREATE TABLE IF NOT EXISTS users (
+  id VARCHAR(64) PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  role VARCHAR(64) NOT NULL,
+  app_access VARCHAR(32) NOT NULL DEFAULT 'both',
+  must_change_credentials SMALLINT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS accounts (
+  id VARCHAR(64) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  type VARCHAR(64) NOT NULL,
+  balance DECIMAL(18, 2) NOT NULL DEFAULT 0,
+  currency VARCHAR(8) NOT NULL DEFAULT 'USD'
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id VARCHAR(64) PRIMARY KEY,
+  date VARCHAR(32) NOT NULL,
+  description TEXT NOT NULL,
+  account VARCHAR(255) NOT NULL,
+  type VARCHAR(32) NOT NULL,
+  amount DECIMAL(18, 2) NOT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'Completed'
+);
+
+CREATE TABLE IF NOT EXISTS invoices (
+  id VARCHAR(64) PRIMARY KEY,
+  client VARCHAR(255) NOT NULL,
+  date VARCHAR(32) NOT NULL,
+  due_date VARCHAR(32) NOT NULL,
+  amount DECIMAL(18, 2) NOT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'Draft'
+);
+
+CREATE TABLE IF NOT EXISTS employees (
+  id VARCHAR(64) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  department VARCHAR(128) NOT NULL,
+  role VARCHAR(128) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'Active',
+  join_date VARCHAR(32) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS payroll (
+  id VARCHAR(64) PRIMARY KEY,
+  employee VARCHAR(255) NOT NULL,
+  department VARCHAR(128) NOT NULL,
+  base_salary DECIMAL(18, 2) NOT NULL,
+  bonus DECIMAL(18, 2) NOT NULL DEFAULT 0,
+  deductions DECIMAL(18, 2) NOT NULL DEFAULT 0,
+  net_pay DECIMAL(18, 2) NOT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'Pending',
+  transaction_id VARCHAR(64),
+  processed_date VARCHAR(32)
+);
+
+CREATE TABLE IF NOT EXISTS attendance (
+  id VARCHAR(64) PRIMARY KEY,
+  employee VARCHAR(255) NOT NULL,
+  date VARCHAR(32) NOT NULL,
+  check_in VARCHAR(32) NOT NULL,
+  check_out VARCHAR(32) NOT NULL,
+  hours DECIMAL(10, 2) NOT NULL DEFAULT 0,
+  status VARCHAR(32) NOT NULL DEFAULT 'Present'
+);
+
+CREATE TABLE IF NOT EXISTS leave_requests (
+  id VARCHAR(64) PRIMARY KEY,
+  employee VARCHAR(255) NOT NULL,
+  type VARCHAR(64) NOT NULL,
+  start_date VARCHAR(32) NOT NULL,
+  end_date VARCHAR(32) NOT NULL,
+  days INTEGER NOT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'Pending',
+  reason TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS departments (
+  id VARCHAR(64) PRIMARY KEY,
+  name VARCHAR(128) NOT NULL,
+  head VARCHAR(255) NOT NULL,
+  employees INTEGER NOT NULL DEFAULT 0,
+  budget DECIMAL(18, 2) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS job_positions (
+  id VARCHAR(64) PRIMARY KEY,
+  title VARCHAR(128) NOT NULL,
+  department VARCHAR(128) NOT NULL,
+  level VARCHAR(64) NOT NULL,
+  min_salary DECIMAL(18, 2) NOT NULL DEFAULT 0,
+  max_salary DECIMAL(18, 2) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS employee_messages (
+  id VARCHAR(64) PRIMARY KEY,
+  employee VARCHAR(255) NOT NULL,
+  employee_email VARCHAR(255) NOT NULL,
+  subject VARCHAR(512) NOT NULL,
+  body TEXT NOT NULL,
+  type VARCHAR(64) NOT NULL,
+  sent_at VARCHAR(32) NOT NULL,
+  sent_by VARCHAR(255) NOT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'Sent'
+);
+`;

@@ -1,0 +1,110 @@
+.stratera-select {
+  position: relative;
+  width: 100%;
+}
+
+.stratera-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stratera-select--sm .stratera-select-trigger {
+  padding: 0.4375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.stratera-select-trigger:hover:not(:disabled) {
+  border-color: #94a3b8;
+}
+
+.stratera-select.is-open .stratera-select-trigger,
+.stratera-select-trigger:focus-visible {
+  outline: none;
+  border-color: #0a1f38;
+  box-shadow: 0 0 0 0.2rem rgba(10, 31, 56, 0.12);
+}
+
+.stratera-select-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stratera-select-value.is-placeholder {
+  color: #64748b;
+  font-weight: 400;
+}
+
+.stratera-select-chevron {
+  flex-shrink: 0;
+  color: #64748b;
+  transition: transform 0.15s ease;
+}
+
+.stratera-select.is-open .stratera-select-chevron {
+  transform: rotate(180deg);
+}
+
+.stratera-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1100;
+  margin: 0;
+  padding: 0.375rem;
+  list-style: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.stratera-select-option {
+  width: 100%;
+  display: block;
+  padding: 0.625rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.stratera-select-option:hover,
+.stratera-select-option.is-highlighted {
+  background: #e8eef5;
+  color: #0a1f38;
+}
+
+.stratera-select-option.is-selected,
+.stratera-select-option.is-selected.is-highlighted {
+  background: #0a1f38;
+  color: #fff;
+}
+
+.stratera-select.is-disabled .stratera-select-trigger {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}

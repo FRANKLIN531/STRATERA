@@ -1,0 +1,23 @@
+{
+  "name": "stratera",
+  "version": "1.0.0",
+  "private": true,
+  "description": "STRATERA R&D Software Group - Unified Desktop Application",
+  "workspaces": [
+    "shared",
+    "database",
+    "accounting",
+    "hr",
+    "app"
+  ],
+  "scripts": {
+    "dev": "node scripts/launch-stratera.mjs",
+    "start": "node scripts/launch-stratera.mjs",
+    "accounting": "npm run dev --workspace=accounting",
+    "hr": "npm run dev --workspace=hr",
+    "build": "npm run build --workspace=stratera-app",
+    "reset:fresh": "node scripts/reset-fresh-system.mjs",
+    "build:accounting": "npm run build --workspace=accounting",
+    "build:hr": "npm run build --workspace=hr"
+  }
+}

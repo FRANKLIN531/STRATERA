@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 700" fill="none">
+  <rect width="1600" height="700" fill="#f5f7fc"/>
+  <defs>
+    <linearGradient id="wash" x1="800" y1="0" x2="800" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity="0.92"/>
+      <stop offset="0.45" stop-color="#f8fafc" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#e8edf5" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="indigo" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#6366F1" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#60A5FA" stop-opacity="0.08"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="700" fill="url(#wash)"/>
+  <circle cx="1100" cy="450" r="260" fill="url(#indigo)"/>
+  <circle cx="250" cy="220" r="180" fill="url(#indigo)"/>
+  <rect x="0" y="490" width="1600" height="210" fill="#eceff4"/>
+  <!-- Laptop silhouette -->
+  <rect x="1050" y="360" width="280" height="170" rx="10" fill="#fff" opacity="0.9"/>
+  <rect x="1070" y="380" width="240" height="120" rx="4" fill="#e2e8f0"/>
+</svg>

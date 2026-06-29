@@ -1,0 +1,14 @@
+node_modules/
+dist/
+dist-electron/
+release/
+*.log
+.DS_Store
+Thumbs.db
+app/.stratera-dev-smtp.json
+.env
+.env.local
+.env.*.local
+*.db
+*.sqlite
+*.sqlite3

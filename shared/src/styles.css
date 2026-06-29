@@ -1,0 +1,212 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root,
+[data-bs-theme=light] {
+  accent-color: #0a1f38;
+  --bs-blue: #0a1f38;
+  --bs-primary: #0a1f38;
+  --bs-primary-rgb: 10, 31, 56;
+  --bs-link-color: #0a1f38;
+  --bs-link-hover-color: #001b3a;
+  --bs-focus-ring-color: rgba(10, 31, 56, 0.2);
+  --stratera-select-bg: #0a1f38;
+  --stratera-select-hover: #e8eef5;
+  --bs-font-sans-serif: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --bs-body-font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --bs-pagination-active-bg: #0a1f38;
+  --bs-pagination-active-border-color: #0a1f38;
+  --bs-nav-pills-link-active-bg: #0a1f38;
+  --bs-dropdown-link-active-bg: #0a1f38;
+}
+
+.btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #0a1f38;
+  --bs-btn-border-color: #0a1f38;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #001b3a;
+  --bs-btn-hover-border-color: #001b3a;
+  --bs-btn-focus-shadow-rgb: 10, 31, 56;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #001b3a;
+  --bs-btn-active-border-color: #001b3a;
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: #0a1f38;
+  --bs-btn-disabled-border-color: #0a1f38;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: #0a1f38;
+  --bs-btn-border-color: #0a1f38;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #0a1f38;
+  --bs-btn-hover-border-color: #0a1f38;
+  --bs-btn-focus-shadow-rgb: 10, 31, 56;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #001b3a;
+  --bs-btn-active-border-color: #001b3a;
+  --bs-btn-disabled-color: #0a1f38;
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: #0a1f38;
+}
+
+.text-primary {
+  color: #0a1f38 !important;
+}
+
+.bg-primary {
+  background-color: #0a1f38 !important;
+}
+
+.border-primary {
+  border-color: #0a1f38 !important;
+}
+
+.link-primary {
+  color: #0a1f38 !important;
+}
+
+.link-primary:hover,
+.link-primary:focus {
+  color: #001b3a !important;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+select,
+.form-select {
+  accent-color: #0a1f38;
+}
+
+select option:checked,
+select option:hover,
+select option:focus {
+  background: #0a1f38;
+  color: #fff;
+}
+
+.form-select:focus,
+.form-control:focus,
+.form-check-input:focus {
+  border-color: #0a1f38;
+  box-shadow: 0 0 0 0.2rem rgba(10, 31, 56, 0.12);
+}
+
+.form-check-input:checked {
+  background-color: #0a1f38;
+  border-color: #0a1f38;
+}
+
+.page-item.active .page-link {
+  background-color: #0a1f38;
+  border-color: #0a1f38;
+}
+
+.page-link {
+  color: #0a1f38;
+}
+
+.page-link:hover {
+  color: #001b3a;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Back navigation */
+.stratera-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #64748b;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stratera-back-link:hover {
+  color: #0a1f38;
+}
+
+.stratera-back-link__icon {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.stratera-back-link:hover .stratera-back-link__icon {
+  transform: translateX(-2px);
+}
+
+.stratera-back-link--pill {
+  padding: 0.375rem 0.875rem 0.375rem 0.625rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #fff;
+  color: #475569;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.stratera-back-link--pill:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0a1f38;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.stratera-back-link--muted {
+  padding: 0.25rem 0;
+  margin-bottom: 0.5rem;
+}
+
+.stratera-back-link--ghost {
+  padding: 8px 0;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 14px;
+}
+
+.stratera-back-link--ghost:hover {
+  color: #fff;
+}
