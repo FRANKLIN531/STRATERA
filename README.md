@@ -66,6 +66,15 @@ npm run build:hr
 
 Windows installers are output to `accounting/release/` and `hr/release/`.
 
+## Sync to GitHub
+
+The repo is at [github.com/FRANKLIN531/STRATERA](https://github.com/FRANKLIN531/STRATERA).
+
+- **After AI changes in Cursor** — saves and pushes automatically when the agent finishes (via `.cursor/hooks.json`).
+- **After your own edits** — double-click **`sync-to-github.bat`** in the project folder (or run `node scripts/sync-to-github.mjs`).
+
+Your colleague gets updates with `git pull` inside their cloned copy.
+
 ## Project Structure
 
 ```
