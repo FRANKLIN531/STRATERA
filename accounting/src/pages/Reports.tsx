@@ -1,5 +1,9 @@
-import { PageHeader, Button, LoadingSpinner, useAsyncData, strateraTheme, exportFinancialReportPdf } from '@stratera/shared';
+import { Button, LoadingSpinner, useAsyncData, exportFinancialReportPdf } from '@stratera/shared';
+import { Icons } from '@stratera/shared';
 import { getAccountingApi } from '../api';
+import { MetricCard } from '../components/MetricCard';
+import { SectionHeader } from '../components/SectionHeader';
+import { formatCurrency } from '../utils/format';
 
 const api = getAccountingApi();
 
@@ -28,48 +32,75 @@ export function Reports() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div>
-      <PageHeader
-        title="Financial Reports"
-        subtitle="Generate and export PDF financial reports"
-      />
+    <div className="hr-page container-fluid px-0">
+      <header className="hr-page-header">
+        <div className="hr-page-header-row">
+          <SectionHeader
+            size="page"
+            title="Financial Reports"
+            subtitle="Generate and export professional PDF reports"
+          />
+        </div>
+      </header>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: 20,
-        }}
-      >
-        {reports.map((report) => (
-          <div
-            key={report.name}
-            style={{
-              background: strateraTheme.colors.white,
-              borderRadius: 12,
-              padding: 24,
-              border: `1px solid ${strateraTheme.colors.gray200}`,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-            }}
-          >
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: strateraTheme.colors.navy }}>
-              {report.name}
-            </h3>
-            <p style={{ fontSize: 14, color: strateraTheme.colors.gray500, flex: 1 }}>
-              {report.description}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: strateraTheme.colors.gray400, fontWeight: 500 }}>
-                {report.period}
-              </span>
-              <Button size="sm" variant="outline" onClick={() => handleExport(report.name)}>
-                Export PDF
-              </Button>
-            </div>
+      <div className="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
+        <MetricCard
+          label="Net Profit"
+          value={formatCurrency(stats?.netProfit ?? 0)}
+          meta={stats?.profitChange ?? 'Current period'}
+          metaType="positive"
+          accent="profit"
+          icon={<Icons.TrendUp />}
+          compactValue
+        />
+        <MetricCard
+          label="Total Revenue"
+          value={formatCurrency(stats?.totalRevenue ?? 0)}
+          meta="Included in P&L"
+          metaType="positive"
+          accent="revenue"
+          icon={<Icons.Dollar />}
+          compactValue
+        />
+        <MetricCard
+          label="Accounts"
+          value={String((accounts ?? []).length)}
+          meta="On balance sheet"
+          accent="accounts"
+          icon={<Icons.Accounts />}
+        />
+        <MetricCard
+          label="Report Types"
+          value={String(reports.length)}
+          meta="Available for export"
+          accent="reports"
+          icon={<Icons.Reports />}
+        />
+      </div>
+
+      <div className="card hr-panel-card shadow-sm mb-4">
+        <div className="card-header py-3">
+          <SectionHeader
+            title="Available Reports"
+            subtitle="Each report opens as a downloadable PDF with your live data"
+          />
+        </div>
+        <div className="card-body">
+          <div className="acc-report-grid">
+            {reports.map((report) => (
+              <article key={report.name} className="acc-report-card">
+                <h3 className="acc-report-card__title">{report.name}</h3>
+                <p className="acc-report-card__desc">{report.description}</p>
+                <div className="acc-report-card__footer">
+                  <span className="acc-report-card__period">{report.period}</span>
+                  <Button size="sm" variant="outline" onClick={() => handleExport(report.name)}>
+                    Export PDF
+                  </Button>
+                </div>
+              </article>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );

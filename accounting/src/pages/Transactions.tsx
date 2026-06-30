@@ -1,11 +1,16 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  PageHeader, DataTable, Button, Badge, LoadingSpinner, useAsyncData,
-  Modal, formFieldStyle, strateraTheme, Icons, ConfirmDialog, Select,
-  actionLinkStyle, actionColors,
+  Button, Badge, LoadingSpinner, useAsyncData, usePagination,
+  Modal, formFieldStyle, Icons, ConfirmDialog, Select,
 } from '@stratera/shared';
 import type { CreateTransactionInput, Transaction } from '@stratera/shared';
 import { getAccountingApi } from '../api';
+import { MetricCard } from '../components/MetricCard';
+import { SectionHeader } from '../components/SectionHeader';
+import { EmptyState } from '../components/EmptyState';
+import { TablePagination } from '../components/TablePagination';
+import { formatCurrency } from '../utils/format';
+import { SearchIcon } from '../components/SearchIcon';
 
 const api = getAccountingApi();
 const today = new Date().toISOString().slice(0, 10);
@@ -18,6 +23,9 @@ const emptyForm: CreateTransactionInput = {
   status: 'Completed',
 };
 
+type TypeFilter = 'all' | 'Income' | 'Expense';
+type StatusFilter = 'all' | 'Completed' | 'Pending';
+
 export function Transactions() {
   const { data: transactions, loading, reload } = useAsyncData(() => api.getTransactions());
   const { data: accounts } = useAsyncData(() => api.getAccounts());
@@ -27,8 +35,41 @@ export function Transactions() {
   const [form, setForm] = useState<CreateTransactionInput>(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   const isPayroll = (txn: Transaction) => txn.description.startsWith('Payroll -');
+
+  const list = transactions ?? [];
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return list.filter((t) => {
+      if (typeFilter !== 'all' && t.type !== typeFilter) return false;
+      if (statusFilter !== 'all' && t.status !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        t.id.toLowerCase().includes(q)
+        || t.description.toLowerCase().includes(q)
+        || t.account.toLowerCase().includes(q)
+      );
+    });
+  }, [list, search, typeFilter, statusFilter]);
+
+  const {
+    page, setPage, totalPages, paginated, from, to, total,
+  } = usePagination(filtered, 12);
+
+  const incomeTotal = list.filter((t) => t.type === 'Income').reduce((s, t) => s + Math.abs(t.amount), 0);
+  const expenseTotal = list.filter((t) => t.type === 'Expense').reduce((s, t) => s + Math.abs(t.amount), 0);
+  const pendingCount = list.filter((t) => t.status === 'Pending').length;
+
+  const typeChips: Array<{ value: TypeFilter; label: string; count: number }> = [
+    { value: 'all', label: 'All', count: list.length },
+    { value: 'Income', label: 'Income', count: list.filter((t) => t.type === 'Income').length },
+    { value: 'Expense', label: 'Expense', count: list.filter((t) => t.type === 'Expense').length },
+  ];
 
   const openCreate = () => {
     setEditingId(null);
@@ -83,51 +124,190 @@ export function Transactions() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div>
-      <PageHeader
-        title="Transactions"
-        subtitle="View and manage all financial transactions"
-        action={
-          <Button onClick={openCreate}>
-            <Icons.Plus />
-            New Transaction
-          </Button>
-        }
-      />
+    <div className="hr-page container-fluid px-0">
+      <header className="hr-page-header">
+        <div className="hr-page-header-row">
+          <SectionHeader
+            size="page"
+            title="Transactions"
+            subtitle="View, filter, and manage all financial transactions"
+          />
+          <div className="hr-page-actions">
+            <Button onClick={openCreate}>
+              <Icons.Plus />
+              New Transaction
+            </Button>
+          </div>
+        </div>
+      </header>
 
-      <DataTable
-        columns={[
-          { key: 'id', header: 'Transaction ID', width: '130px' },
-          { key: 'date', header: 'Date', width: '110px' },
-          { key: 'description', header: 'Description', render: (row) => (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {row.description}
-              {isPayroll(row) && <Badge variant="info">Payroll</Badge>}
-            </span>
-          )},
-          { key: 'account', header: 'Account', width: '160px' },
-          { key: 'type', header: 'Type', width: '100px', render: (row) => (
-            <Badge variant={row.type === 'Income' ? 'success' : 'danger'}>{row.type}</Badge>
-          )},
-          { key: 'amount', header: 'Amount', width: '130px', render: (row) => (
-            <span style={{ fontWeight: 600, color: row.amount > 0 ? strateraTheme.colors.success : strateraTheme.colors.danger }}>
-              {row.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-            </span>
-          )},
-          { key: 'status', header: 'Status', width: '110px', render: (row) => (
-            <Badge variant={row.status === 'Completed' ? 'success' : 'warning'}>{row.status}</Badge>
-          )},
-          { key: 'actions', header: '', width: '100px', render: (row: Transaction) =>
-            !isPayroll(row) ? (
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button type="button" style={{ ...actionLinkStyle, color: actionColors.edit }} onClick={() => openEdit(row)}>Edit</button>
-                <button type="button" style={{ ...actionLinkStyle, color: actionColors.delete }} onClick={() => setDeleteId(row.id)}>Delete</button>
+      <div className="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
+        <MetricCard
+          label="Total Transactions"
+          value={String(list.length)}
+          meta="All ledger entries"
+          accent="transactions"
+          icon={<Icons.Transactions />}
+        />
+        <MetricCard
+          label="Income Recorded"
+          value={formatCurrency(incomeTotal)}
+          meta={`${list.filter((t) => t.type === 'Income').length} entries`}
+          metaType="positive"
+          accent="revenue"
+          icon={<Icons.Dollar />}
+          compactValue
+        />
+        <MetricCard
+          label="Expenses Recorded"
+          value={formatCurrency(expenseTotal)}
+          meta={`${list.filter((t) => t.type === 'Expense').length} entries`}
+          accent="expenses"
+          icon={<Icons.Transactions />}
+          compactValue
+        />
+        <MetricCard
+          label="Pending"
+          value={String(pendingCount)}
+          meta="Awaiting completion"
+          accent="pending"
+          icon={<Icons.Transactions />}
+        />
+      </div>
+
+      <div className="card hr-panel-card hr-directory-card shadow-sm">
+        <div className="card-header py-3">
+          <div className="row g-3 align-items-center">
+            <div className="col-lg-4">
+              <SectionHeader
+                title="Transaction Ledger"
+                subtitle="Search and filter by type or status"
+              />
+            </div>
+            <div className="col-lg-8">
+              <div className="row g-2">
+                <div className="col-md-7">
+                  <div className="input-group input-group-sm hr-directory-search">
+                    <span className="input-group-text bg-white"><SearchIcon /></span>
+                    <input
+                      type="search"
+                      className="form-control"
+                      placeholder="Search ID, description, or account..."
+                      value={search}
+                      onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                    />
+                  </div>
+                </div>
+                <div className="col-md-5">
+                  <Select
+                    size="sm"
+                    value={statusFilter}
+                    onChange={(v) => { setStatusFilter(v as StatusFilter); setPage(1); }}
+                    options={[
+                      { value: 'all', label: 'All statuses' },
+                      { value: 'Completed', label: 'Completed' },
+                      { value: 'Pending', label: 'Pending' },
+                    ]}
+                  />
+                </div>
               </div>
-            ) : null,
-          },
-        ]}
-        data={transactions ?? []}
-      />
+            </div>
+          </div>
+          <div className="hr-leave-status-chips mt-3">
+            {typeChips.map((chip) => (
+              <button
+                key={chip.value}
+                type="button"
+                className={`hr-leave-chip${typeFilter === chip.value ? ' is-active' : ''}`}
+                onClick={() => { setTypeFilter(chip.value); setPage(1); }}
+              >
+                {chip.label}
+                <span className="hr-leave-chip-count">{chip.count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="hr-empty-state-panel p-4">
+            <EmptyState
+              accent="transactions"
+              title={list.length === 0 ? 'No transactions yet' : 'No matching transactions'}
+              description={
+                list.length === 0
+                  ? 'Record income and expenses to build your financial ledger.'
+                  : 'Try a different search term or filter.'
+              }
+              actionLabel={list.length === 0 ? 'New Transaction' : undefined}
+              actionIcon={list.length === 0 ? <Icons.Plus /> : undefined}
+              onAction={list.length === 0 ? openCreate : undefined}
+            />
+          </div>
+        ) : (
+          <>
+            <div className="table-responsive">
+              <table className="table table-hover hr-directory-table mb-0">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Account</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.map((row) => (
+                    <tr key={row.id}>
+                      <td><span className="hr-emp-id">{row.id}</span></td>
+                      <td>{row.date}</td>
+                      <td>
+                        <span className="hr-emp-name">{row.description}</span>
+                        {isPayroll(row) && (
+                          <span style={{ marginLeft: 8 }}><Badge variant="info">Payroll</Badge></span>
+                        )}
+                      </td>
+                      <td>{row.account}</td>
+                      <td>
+                        <Badge variant={row.type === 'Income' ? 'success' : 'danger'}>{row.type}</Badge>
+                      </td>
+                      <td>
+                        <span className={row.amount > 0 ? 'acc-amount-positive' : 'acc-amount-negative'}>
+                          {formatCurrency(row.amount)}
+                        </span>
+                      </td>
+                      <td>
+                        <Badge variant={row.status === 'Completed' ? 'success' : 'warning'}>{row.status}</Badge>
+                      </td>
+                      <td>
+                        {!isPayroll(row) ? (
+                          <div className="hr-table-actions flex-wrap">
+                            <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => openEdit(row)}>Edit</button>
+                            <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setDeleteId(row.id)}>Delete</button>
+                          </div>
+                        ) : (
+                          <span className="text-muted small">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <TablePagination
+              page={page}
+              totalPages={totalPages}
+              from={from}
+              to={to}
+              total={total}
+              onPageChange={setPage}
+            />
+          </>
+        )}
+      </div>
 
       {showForm && (
         <Modal
@@ -180,7 +360,7 @@ export function Transactions() {
               <span style={formFieldStyle.label}>Status</span>
               <Select
                 value={form.status}
-                onChange={(status) => setForm({ ...form, status })}
+                onChange={(status) => setForm({ ...form, status: status ?? 'Completed' })}
                 options={[
                   { value: 'Completed', label: 'Completed' },
                   { value: 'Pending', label: 'Pending' },

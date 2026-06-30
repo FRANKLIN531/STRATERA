@@ -1,11 +1,17 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  PageHeader, DataTable, Button, Badge, LoadingSpinner, useAsyncData,
-  Modal, formFieldStyle, Icons, exportInvoicePdf, strateraTheme,
-  ConfirmDialog, actionLinkStyle, actionColors, Select,
+  Button, Badge, LoadingSpinner, useAsyncData, usePagination,
+  Modal, formFieldStyle, Icons, exportInvoicePdf,
+  ConfirmDialog, Select,
 } from '@stratera/shared';
 import type { CreateInvoiceInput, Invoice } from '@stratera/shared';
 import { getAccountingApi } from '../api';
+import { MetricCard } from '../components/MetricCard';
+import { SectionHeader } from '../components/SectionHeader';
+import { EmptyState } from '../components/EmptyState';
+import { TablePagination } from '../components/TablePagination';
+import { formatCurrency } from '../utils/format';
+import { SearchIcon } from '../components/SearchIcon';
 
 const api = getAccountingApi();
 const today = new Date().toISOString().slice(0, 10);
@@ -27,6 +33,8 @@ const statusVariant = (status: string) => {
   }
 };
 
+type StatusFilter = 'all' | 'Draft' | 'Sent' | 'Paid' | 'Overdue';
+
 export function Invoices() {
   const { data: invoices, loading, reload } = useAsyncData(() => api.getInvoices());
   const [showForm, setShowForm] = useState(false);
@@ -35,6 +43,34 @@ export function Invoices() {
   const [form, setForm] = useState<CreateInvoiceInput>(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+
+  const list = invoices ?? [];
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return list.filter((inv) => {
+      if (statusFilter !== 'all' && inv.status !== statusFilter) return false;
+      if (!q) return true;
+      return inv.id.toLowerCase().includes(q) || inv.client.toLowerCase().includes(q);
+    });
+  }, [list, search, statusFilter]);
+
+  const {
+    page, setPage, totalPages, paginated, from, to, total,
+  } = usePagination(filtered, 10);
+
+  const paidTotal = list.filter((i) => i.status === 'Paid').reduce((s, i) => s + i.amount, 0);
+  const outstanding = list.filter((i) => i.status !== 'Paid').reduce((s, i) => s + i.amount, 0);
+
+  const statusChips: Array<{ value: StatusFilter; label: string; count: number }> = [
+    { value: 'all', label: 'All', count: list.length },
+    { value: 'Draft', label: 'Draft', count: list.filter((i) => i.status === 'Draft').length },
+    { value: 'Sent', label: 'Sent', count: list.filter((i) => i.status === 'Sent').length },
+    { value: 'Paid', label: 'Paid', count: list.filter((i) => i.status === 'Paid').length },
+    { value: 'Overdue', label: 'Overdue', count: list.filter((i) => i.status === 'Overdue').length },
+  ];
 
   const openCreate = () => {
     setEditingId(null);
@@ -87,57 +123,157 @@ export function Invoices() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div>
-      <PageHeader
-        title="Invoices"
-        subtitle="Create, send, and track client invoices"
-        action={
-          <Button onClick={openCreate}>
-            <Icons.Plus />
-            Create Invoice
-          </Button>
-        }
-      />
+    <div className="hr-page container-fluid px-0">
+      <header className="hr-page-header">
+        <div className="hr-page-header-row">
+          <SectionHeader
+            size="page"
+            title="Invoices"
+            subtitle="Create, send, and track client invoices"
+          />
+          <div className="hr-page-actions">
+            <Button onClick={openCreate}>
+              <Icons.Plus />
+              Create Invoice
+            </Button>
+          </div>
+        </div>
+      </header>
 
-      <DataTable
-        columns={[
-          { key: 'id', header: 'Invoice #', width: '140px' },
-          { key: 'client', header: 'Client' },
-          { key: 'date', header: 'Issue Date', width: '120px' },
-          { key: 'dueDate', header: 'Due Date', width: '120px' },
-          { key: 'amount', header: 'Amount', width: '130px', render: (row) => (
-            <span style={{ fontWeight: 600 }}>
-              {row.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-            </span>
-          )},
-          { key: 'status', header: 'Status', width: '110px', render: (row) => (
-            <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
-          )},
-          { key: 'actions', header: 'Actions', width: '200px', render: (row: Invoice) => (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button type="button" style={{ ...actionLinkStyle, color: actionColors.edit }} onClick={() => openEdit(row)}>Edit</button>
-              <button type="button" style={{ ...actionLinkStyle, color: actionColors.delete }} onClick={() => setDeleteId(row.id)}>Delete</button>
-              <button type="button" style={{ ...actionLinkStyle, color: actionColors.email }} onClick={() => api.emailInvoice(row)}>Email</button>
-              <button
-                type="button"
-                onClick={() => exportInvoicePdf(row)}
-                style={{
-                  fontSize: 12,
-                  padding: '4px 10px',
-                  borderRadius: 6,
-                  border: `1px solid ${strateraTheme.colors.gray300}`,
-                  background: 'transparent',
-                  color: strateraTheme.colors.navy,
-                  fontWeight: 600,
-                }}
-              >
-                PDF
-              </button>
+      <div className="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
+        <MetricCard
+          label="Total Invoices"
+          value={String(list.length)}
+          meta="All client invoices"
+          accent="invoices"
+          icon={<Icons.Invoices />}
+        />
+        <MetricCard
+          label="Collected"
+          value={formatCurrency(paidTotal)}
+          meta={`${list.filter((i) => i.status === 'Paid').length} paid`}
+          metaType="positive"
+          accent="revenue"
+          icon={<Icons.Dollar />}
+          compactValue
+        />
+        <MetricCard
+          label="Outstanding"
+          value={formatCurrency(outstanding)}
+          meta="Unpaid or overdue"
+          accent="pending"
+          icon={<Icons.Invoices />}
+          compactValue
+        />
+        <MetricCard
+          label="Overdue"
+          value={String(list.filter((i) => i.status === 'Overdue').length)}
+          meta="Needs follow-up"
+          accent="expenses"
+          icon={<Icons.Invoices />}
+        />
+      </div>
+
+      <div className="card hr-panel-card hr-directory-card shadow-sm">
+        <div className="card-header py-3">
+          <div className="row g-3 align-items-center">
+            <div className="col-lg-4">
+              <SectionHeader
+                title="Invoice Register"
+                subtitle="Filter by status or search clients"
+              />
             </div>
-          )},
-        ]}
-        data={invoices ?? []}
-      />
+            <div className="col-lg-8">
+              <div className="input-group input-group-sm hr-directory-search">
+                <span className="input-group-text bg-white"><SearchIcon /></span>
+                <input
+                  type="search"
+                  className="form-control"
+                  placeholder="Search invoice # or client..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="hr-leave-status-chips mt-3">
+            {statusChips.map((chip) => (
+              <button
+                key={chip.value}
+                type="button"
+                className={`hr-leave-chip${statusFilter === chip.value ? ' is-active' : ''}`}
+                onClick={() => { setStatusFilter(chip.value); setPage(1); }}
+              >
+                {chip.label}
+                <span className="hr-leave-chip-count">{chip.count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="hr-empty-state-panel p-4">
+            <EmptyState
+              accent="invoices"
+              title={list.length === 0 ? 'No invoices yet' : 'No matching invoices'}
+              description={
+                list.length === 0
+                  ? 'Create your first invoice to bill clients and track payments.'
+                  : 'Try a different search or status filter.'
+              }
+              actionLabel={list.length === 0 ? 'Create Invoice' : undefined}
+              actionIcon={list.length === 0 ? <Icons.Plus /> : undefined}
+              onAction={list.length === 0 ? openCreate : undefined}
+            />
+          </div>
+        ) : (
+          <>
+            <div className="table-responsive">
+              <table className="table table-hover hr-directory-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Invoice #</th>
+                    <th>Client</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.map((row) => (
+                    <tr key={row.id}>
+                      <td><span className="hr-emp-id">{row.id}</span></td>
+                      <td><span className="hr-emp-name">{row.client}</span></td>
+                      <td>{row.date}</td>
+                      <td>{row.dueDate}</td>
+                      <td><span className="acc-amount-neutral">{formatCurrency(row.amount)}</span></td>
+                      <td><Badge variant={statusVariant(row.status)}>{row.status}</Badge></td>
+                      <td>
+                        <div className="hr-table-actions flex-wrap">
+                          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => openEdit(row)}>Edit</button>
+                          <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setDeleteId(row.id)}>Delete</button>
+                          <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => api.emailInvoice(row)}>Email</button>
+                          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => exportInvoicePdf(row)}>PDF</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <TablePagination
+              page={page}
+              totalPages={totalPages}
+              from={from}
+              to={to}
+              total={total}
+              onPageChange={setPage}
+            />
+          </>
+        )}
+      </div>
 
       {showForm && (
         <Modal
@@ -172,7 +308,7 @@ export function Invoices() {
               <span style={formFieldStyle.label}>Status</span>
               <Select
                 value={form.status}
-                onChange={(status) => setForm({ ...form, status })}
+                onChange={(status) => setForm({ ...form, status: status ?? 'Draft' })}
                 options={[
                   { value: 'Draft', label: 'Draft' },
                   { value: 'Sent', label: 'Sent' },

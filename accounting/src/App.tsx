@@ -8,6 +8,7 @@ import { Invoices } from './pages/Invoices';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { getAccountingApi } from './api';
+import './styles/accounting-dashboard.css';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: <Icons.Dashboard /> },
