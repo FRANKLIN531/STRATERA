@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import electron from 'electron';
 
 let electronProc = null;
+let restartTimer = null;
 
 function spawnElectron(cwd) {
   const port = process.env.STRATERA_DEV_PORT || 5190;
@@ -36,6 +37,17 @@ function spawnElectron(cwd) {
   return electronProc;
 }
 
+function killElectronTree() {
+  if (!electronProc?.pid || electronProc.killed) return;
+  if (process.platform === 'win32') {
+    spawn('taskkill', ['/F', '/T', '/PID', String(electronProc.pid)], { stdio: 'ignore' });
+  } else {
+    electronProc.kill('SIGTERM');
+  }
+  electronProc = null;
+  process.electronApp = null;
+}
+
 export function startElectronDev(cwd) {
   if (electronProc?.pid && !electronProc.killed) {
     return electronProc;
@@ -45,10 +57,10 @@ export function startElectronDev(cwd) {
 
 /** Restart Electron after the main process bundle rebuilds (loads new IPC handlers). */
 export function restartElectronDev(cwd) {
-  if (electronProc?.pid && !electronProc.killed) {
-    electronProc.kill();
-    electronProc = null;
-    process.electronApp = null;
-  }
-  return spawnElectron(cwd);
+  if (restartTimer) clearTimeout(restartTimer);
+  killElectronTree();
+  restartTimer = setTimeout(() => {
+    restartTimer = null;
+    spawnElectron(cwd);
+  }, 1500);
 }

@@ -275,6 +275,7 @@ async function main() {
 
 
   freePort(PORT);
+  freePort(KIOSK_PORT);
 
   await sleep(800);
 

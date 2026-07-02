@@ -4,6 +4,8 @@ import type { CheckInConfirmInput, CheckInLookupInput } from './types';
 
 export const KIOSK_HTTP_PORT = Number(process.env.STRATERA_KIOSK_HTTP_PORT || 5192);
 
+let activeServer: http.Server | null = null;
+
 function readJsonBody(req: http.IncomingMessage): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
     let data = '';
@@ -28,6 +30,16 @@ function sendJson(res: http.ServerResponse, status: number, payload: unknown): v
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.end(JSON.stringify(payload));
+}
+
+export function stopKioskHttpServer(): Promise<void> {
+  if (!activeServer) return Promise.resolve();
+  const server = activeServer;
+  activeServer = null;
+  return new Promise((resolve) => {
+    server.close(() => resolve());
+    setTimeout(resolve, 500);
+  });
 }
 
 export function startKioskHttpServer(db: StrateraDatabase): http.Server | null {
@@ -80,7 +92,18 @@ export function startKioskHttpServer(db: StrateraDatabase): http.Server | null {
       }
     });
 
+    server.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        console.warn(
+          `STRATERA kiosk API port ${KIOSK_HTTP_PORT} is already in use — phone QR check-in unavailable. Close other STRATERA windows and restart.`,
+        );
+        return;
+      }
+      console.error('STRATERA kiosk HTTP server error:', err);
+    });
+
     server.listen(KIOSK_HTTP_PORT, '0.0.0.0', () => {
+      activeServer = server;
       console.log(`STRATERA kiosk API listening on http://0.0.0.0:${KIOSK_HTTP_PORT}`);
     });
 

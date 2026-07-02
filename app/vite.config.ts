@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron/simple';
 import path from 'path';
-import { startElectronDev, restartElectronDev } from './electron-dev.mjs';
+import { restartElectronDev } from './electron-dev.mjs';
 import { strateraDevAuthPlugin } from './stratera-dev-auth.mjs';
 
 const databaseAlias = path.resolve(__dirname, '../database/src');
@@ -55,10 +55,9 @@ export default defineConfig({
       preload: {
         input: 'electron/preload.ts',
         onstart(args) {
+          // Only reload the renderer — Electron is started after the main bundle is ready.
           if (process.electronApp?.pid) {
             args.reload();
-          } else {
-            startElectronDev(__dirname);
           }
         },
       },

@@ -6,6 +6,7 @@ import {
   loadDatabaseConfig,
   registerAllIpcHandlers,
   startKioskHttpServer,
+  stopKioskHttpServer,
 } from '@stratera/database';
 import type { StrateraDatabase } from '@stratera/database';
 
@@ -76,5 +77,6 @@ app.on('activate', () => {
 });
 
 app.on('will-quit', () => {
+  stopKioskHttpServer();
   db?.close();
 });
