@@ -10,22 +10,20 @@ let hrFallback: HrApi | null = null;
 
 
 
-function hasCredentialVerification(api: {
+function hasNativeDatabase(api: { login?: unknown } | undefined): boolean {
+  return typeof api?.login === 'function';
+}
 
-  sendCredentialEmailVerification?: unknown;
-
-  verifyCredentialEmailCode?: unknown;
-
-}): boolean {
-
-  return (
-
-    typeof api.sendCredentialEmailVerification === 'function' &&
-
-    typeof api.verifyCredentialEmailCode === 'function'
-
-  );
-
+function electronSignUpUnavailable<K extends keyof AccountingApi>(key: K): AccountingApi[K] {
+  const message =
+    'Sign-up is not available in this session. Close every STRATERA window, stop the terminal (Ctrl+C), then run start-stratera.bat again.';
+  if (key === 'isSignUpVerificationEnabled') {
+    return (async () => false) as AccountingApi[K];
+  }
+  if (key === 'signUpComplete') {
+    return (async () => ({ ok: false, error: message })) as AccountingApi[K];
+  }
+  return (async () => ({ ok: false as const, error: message })) as AccountingApi[K];
 }
 
 
@@ -33,7 +31,7 @@ function hasCredentialVerification(api: {
 export function getAccountingApi(): AccountingApi {
   const native = window.stratera?.isElectron ? window.stratera.accounting : undefined;
 
-  if (native && hasCredentialVerification(native)) {
+  if (native && hasNativeDatabase(native)) {
     const fallback = accountingFallback ?? createAccountingFallbackApi();
     if (!accountingFallback) accountingFallback = fallback;
     return {
@@ -57,7 +55,12 @@ function mergeNativeMethod<K extends keyof AccountingApi>(
 ): AccountingApi[K] {
   const fallbackFn = fallback[key];
   const nativeFn = native[key];
+  const signupKey =
+    key === 'signUpStart' || key === 'signUpComplete' || key === 'isSignUpVerificationEnabled';
   if (typeof nativeFn !== 'function') {
+    if (window.stratera?.isElectron && signupKey) {
+      return electronSignUpUnavailable(key);
+    }
     return fallbackFn;
   }
   return (async (...args: unknown[]) => {
@@ -69,6 +72,9 @@ function mergeNativeMethod<K extends keyof AccountingApi>(
         msg.includes('No handler registered') ||
         msg.includes('Error invoking remote method')
       ) {
+        if (window.stratera?.isElectron && signupKey) {
+          return electronSignUpUnavailable(key)(...args);
+        }
         return await (fallbackFn as (...a: unknown[]) => unknown).apply(fallback, args);
       }
       throw err;
@@ -81,7 +87,7 @@ function mergeNativeMethod<K extends keyof AccountingApi>(
 export function getHrApi(): HrApi {
   const native = window.stratera?.isElectron ? window.stratera.hr : undefined;
 
-  if (native && hasCredentialVerification(native)) {
+  if (native && hasNativeDatabase(native)) {
     const fallback = hrFallback ?? createHrFallbackApi();
     if (!hrFallback) hrFallback = fallback;
     return {
@@ -111,7 +117,12 @@ export function getHrApi(): HrApi {
 function mergeHrMethod<K extends keyof HrApi>(native: HrApi, key: K): HrApi[K] {
   const fallbackFn = (hrFallback ?? createHrFallbackApi())[key];
   const nativeFn = native[key];
+  const signupKey =
+    key === 'signUpStart' || key === 'signUpComplete' || key === 'isSignUpVerificationEnabled';
   if (typeof nativeFn !== 'function') {
+    if (window.stratera?.isElectron && signupKey) {
+      return electronSignUpUnavailable(key as keyof AccountingApi) as HrApi[K];
+    }
     return fallbackFn;
   }
   return (async (...args: unknown[]) => {
@@ -123,6 +134,11 @@ function mergeHrMethod<K extends keyof HrApi>(native: HrApi, key: K): HrApi[K] {
         msg.includes('No handler registered') ||
         msg.includes('Error invoking remote method')
       ) {
+        if (window.stratera?.isElectron && signupKey) {
+          return (electronSignUpUnavailable(key as keyof AccountingApi) as (...a: unknown[]) => unknown)(
+            ...args,
+          );
+        }
         return await (fallbackFn as (...a: unknown[]) => unknown).apply(
           hrFallback ?? createHrFallbackApi(),
           args,
@@ -234,6 +250,15 @@ export function getAuthApi(module: 'accounting' | 'hr') {
     },
 
     signUpStart: async (input) => {
+      const native =
+        module === 'hr' ? window.stratera?.hr : window.stratera?.accounting;
+      if (window.stratera?.isElectron && typeof native?.signUpStart === 'function') {
+        try {
+          return await native.signUpStart(input);
+        } catch (err) {
+          return { ok: false as const, error: verificationErrorMessage(err) };
+        }
+      }
       try {
         return await api.signUpStart(input);
       } catch (err) {
@@ -242,6 +267,16 @@ export function getAuthApi(module: 'accounting' | 'hr') {
     },
 
     signUpComplete: async (email, code) => {
+      const native =
+        module === 'hr' ? window.stratera?.hr : window.stratera?.accounting;
+      if (window.stratera?.isElectron && typeof native?.signUpComplete === 'function') {
+        try {
+          const result = await native.signUpComplete(email, code);
+          return result ?? { ok: false, error: 'Could not complete sign up.' };
+        } catch (err) {
+          return { ok: false, error: verificationErrorMessage(err) };
+        }
+      }
       try {
         const result = await api.signUpComplete(email, code);
         return result ?? { ok: false, error: 'Could not complete sign up.' };
