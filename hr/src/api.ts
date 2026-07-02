@@ -48,6 +48,9 @@ export function getHrApi(): HrApi {
     return {
       ...fallback,
       ...native,
+      isSignUpVerificationEnabled: mergeHrMethod(native, 'isSignUpVerificationEnabled'),
+      signUpStart: mergeHrMethod(native, 'signUpStart'),
+      signUpComplete: mergeHrMethod(native, 'signUpComplete'),
       getKioskCheckInConfig: mergeHrMethod(native, 'getKioskCheckInConfig'),
       regenerateCheckInSiteToken: mergeHrMethod(native, 'regenerateCheckInSiteToken'),
       lookupCheckIn: mergeHrMethod(native, 'lookupCheckIn'),
@@ -136,7 +139,7 @@ function verificationErrorMessage(err: unknown): string {
 
   if (msg.includes('No handler registered') || msg.includes('Error invoking remote method')) {
 
-    return 'STRATERA database is not connected. Restart start-stratera.bat and use the STRATERA desktop window.';
+    return 'Sign-up needs a fresh STRATERA desktop session. Close every STRATERA window, stop the terminal (Ctrl+C), then run start-stratera.bat again. Use the STRATERA desktop window — not the browser tab — to create an account.';
 
   }
 

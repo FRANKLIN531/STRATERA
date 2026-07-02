@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron/simple';
 import path from 'path';
-import { startElectronDev } from './electron-dev.mjs';
+import { startElectronDev, restartElectronDev } from './electron-dev.mjs';
 import { strateraDevAuthPlugin } from './stratera-dev-auth.mjs';
 
 const databaseAlias = path.resolve(__dirname, '../database/src');
@@ -37,7 +37,7 @@ export default defineConfig({
       main: {
         entry: 'electron/main.ts',
         onstart() {
-          startElectronDev(__dirname);
+          restartElectronDev(__dirname);
         },
         vite: {
           resolve: {

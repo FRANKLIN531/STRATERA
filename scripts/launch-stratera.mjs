@@ -326,6 +326,7 @@ async function main() {
     }
 
     console.log('  The STRATERA desktop window should also open automatically.');
+    console.log('  Sign in and create accounts in the desktop window (not the browser tab).');
 
     console.log('  Keep this command window open while you use the app.');
 

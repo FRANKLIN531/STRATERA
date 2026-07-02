@@ -74,8 +74,13 @@ export function registerAllIpcHandlers(ipcMain: IpcMain, db: StrateraDatabase): 
   });
 
   ipcMain.handle('auth:signUpComplete', (_event, email: string, code: string) => {
-    const result = db.signUpComplete(email, code);
-    return result.ok ? { ok: true } : { ok: false, error: result.error };
+    try {
+      const result = db.signUpComplete(email, code);
+      return result.ok ? { ok: true } : { ok: false, error: result.error };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { ok: false, error: msg || 'Could not complete sign up.' };
+    }
   });
 
   ipcMain.handle('accounting:getDashboardStats', () => db.getAccountingDashboardStats());

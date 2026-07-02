@@ -8,11 +8,7 @@ import electron from 'electron';
 
 let electronProc = null;
 
-export function startElectronDev(cwd) {
-  if (electronProc?.pid && !electronProc.killed) {
-    return electronProc;
-  }
-
+function spawnElectron(cwd) {
   const port = process.env.STRATERA_DEV_PORT || 5190;
   const devUrl = process.env.VITE_DEV_SERVER_URL || `http://127.0.0.1:${port}/`;
 
@@ -31,11 +27,28 @@ export function startElectronDev(cwd) {
   electronProc.once('exit', () => {
     electronProc = null;
     process.electronApp = null;
-    const port = process.env.STRATERA_DEV_PORT || 5190;
+    const closedPort = process.env.STRATERA_DEV_PORT || 5190;
     console.log('');
-    console.log(`  Electron closed. Dev server still running at http://127.0.0.1:${port}/`);
+    console.log(`  Electron closed. Dev server still running at http://127.0.0.1:${closedPort}/`);
     console.log('');
   });
 
   return electronProc;
+}
+
+export function startElectronDev(cwd) {
+  if (electronProc?.pid && !electronProc.killed) {
+    return electronProc;
+  }
+  return spawnElectron(cwd);
+}
+
+/** Restart Electron after the main process bundle rebuilds (loads new IPC handlers). */
+export function restartElectronDev(cwd) {
+  if (electronProc?.pid && !electronProc.killed) {
+    electronProc.kill();
+    electronProc = null;
+    process.electronApp = null;
+  }
+  return spawnElectron(cwd);
 }

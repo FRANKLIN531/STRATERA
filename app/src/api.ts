@@ -31,15 +31,49 @@ function hasCredentialVerification(api: {
 
 
 export function getAccountingApi(): AccountingApi {
-
   const native = window.stratera?.isElectron ? window.stratera.accounting : undefined;
 
-  if (native && hasCredentialVerification(native)) return native;
+  if (native && hasCredentialVerification(native)) {
+    const fallback = accountingFallback ?? createAccountingFallbackApi();
+    if (!accountingFallback) accountingFallback = fallback;
+    return {
+      ...fallback,
+      ...native,
+      isSignUpVerificationEnabled: mergeNativeMethod(native, fallback, 'isSignUpVerificationEnabled'),
+      signUpStart: mergeNativeMethod(native, fallback, 'signUpStart'),
+      signUpComplete: mergeNativeMethod(native, fallback, 'signUpComplete'),
+    };
+  }
 
   if (!accountingFallback) accountingFallback = createAccountingFallbackApi();
 
   return accountingFallback;
+}
 
+function mergeNativeMethod<K extends keyof AccountingApi>(
+  native: AccountingApi,
+  fallback: AccountingApi,
+  key: K,
+): AccountingApi[K] {
+  const fallbackFn = fallback[key];
+  const nativeFn = native[key];
+  if (typeof nativeFn !== 'function') {
+    return fallbackFn;
+  }
+  return (async (...args: unknown[]) => {
+    try {
+      return await (nativeFn as (...a: unknown[]) => unknown).apply(native, args);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        msg.includes('No handler registered') ||
+        msg.includes('Error invoking remote method')
+      ) {
+        return await (fallbackFn as (...a: unknown[]) => unknown).apply(fallback, args);
+      }
+      throw err;
+    }
+  }) as AccountingApi[K];
 }
 
 
@@ -53,6 +87,9 @@ export function getHrApi(): HrApi {
     return {
       ...fallback,
       ...native,
+      isSignUpVerificationEnabled: mergeHrMethod(native, 'isSignUpVerificationEnabled'),
+      signUpStart: mergeHrMethod(native, 'signUpStart'),
+      signUpComplete: mergeHrMethod(native, 'signUpComplete'),
       getKioskCheckInConfig: mergeHrMethod(native, 'getKioskCheckInConfig'),
       regenerateCheckInSiteToken: mergeHrMethod(native, 'regenerateCheckInSiteToken'),
       lookupCheckIn: mergeHrMethod(native, 'lookupCheckIn'),
@@ -106,7 +143,7 @@ function verificationErrorMessage(err: unknown): string {
 
   if (msg.includes('No handler registered') || msg.includes('Error invoking remote method')) {
 
-    return 'STRATERA database is not connected. Restart start-stratera.bat and use the STRATERA desktop window.';
+    return 'Sign-up needs a fresh STRATERA desktop session. Close every STRATERA window, stop the terminal (Ctrl+C), then run start-stratera.bat again. Use the STRATERA desktop window — not the browser tab — to create an account.';
 
   }
 
