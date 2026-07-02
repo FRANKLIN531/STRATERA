@@ -13,6 +13,7 @@ import type {
   AttendanceRecord,
   LeaveRequest,
   Department,
+  CreateAccountInput,
   CreateTransactionInput,
   CreateInvoiceInput,
   CreateEmployeeInput,
@@ -589,6 +590,57 @@ export function createAccountingFallbackApi(): AccountingApi {
     ...auth,
     getDashboardStats: async () => accountingStats,
     getAccounts: async () => accounts,
+    createAccount: async (input: CreateAccountInput) => {
+      const name = input.name.trim();
+      if (!name) throw new Error('Account name is required.');
+      if (accounts.some((a) => a.name.toLowerCase() === name.toLowerCase())) {
+        throw new Error('An account with this name already exists.');
+      }
+      const acc: Account = {
+        id: `ACC-${String(accounts.length + 1).padStart(3, '0')}`,
+        name,
+        type: input.type,
+        balance: 0,
+        currency: input.currency ?? 'USD',
+      };
+      accounts.push(acc);
+      return acc;
+    },
+    updateAccount: async (id, input) => {
+      const acc = accounts.find((a) => a.id === id);
+      if (!acc) return null;
+      const name = input.name.trim();
+      if (!name) throw new Error('Account name is required.');
+      if (accounts.some((a) => a.id !== id && a.name.toLowerCase() === name.toLowerCase())) {
+        throw new Error('An account with this name already exists.');
+      }
+      const oldName = acc.name;
+      acc.name = name;
+      acc.type = input.type;
+      acc.currency = input.currency ?? acc.currency;
+      if (oldName !== name) {
+        for (const t of transactions) {
+          if (t.account === oldName) t.account = name;
+        }
+      }
+      return acc;
+    },
+    deleteAccount: async (id) => {
+      const idx = accounts.findIndex((a) => a.id === id);
+      if (idx < 0) return false;
+      const acc = accounts[idx];
+      if (acc.name === 'Cash & Bank' || acc.name === 'Operating Expenses') {
+        throw new Error('This system account cannot be deleted.');
+      }
+      if (transactions.some((t) => t.account === acc.name)) {
+        throw new Error('Remove or reassign transactions before deleting this account.');
+      }
+      if (acc.balance !== 0) {
+        throw new Error('Only accounts with a zero balance can be deleted.');
+      }
+      accounts.splice(idx, 1);
+      return true;
+    },
     getTransactions: async () => transactions,
     getInvoices: async () => invoices,
     createTransaction: async (input: CreateTransactionInput) => {

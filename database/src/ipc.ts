@@ -64,6 +64,9 @@ export function registerAllIpcHandlers(ipcMain: IpcMain, db: StrateraDatabase): 
 
   ipcMain.handle('accounting:getDashboardStats', () => db.getAccountingDashboardStats());
   ipcMain.handle('accounting:getAccounts', () => db.getAccounts());
+  ipcMain.handle('accounting:createAccount', (_e, input) => db.createAccount(input));
+  ipcMain.handle('accounting:updateAccount', (_e, id, input) => db.updateAccount(id, input));
+  ipcMain.handle('accounting:deleteAccount', (_e, id) => db.deleteAccount(id));
   ipcMain.handle('accounting:getTransactions', () => db.getTransactions());
   ipcMain.handle('accounting:getInvoices', () => db.getInvoices());
   ipcMain.handle('accounting:createTransaction', (_e, input) => db.createTransaction(input));

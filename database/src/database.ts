@@ -34,6 +34,7 @@ import type {
   AttendanceTrend,
   DepartmentCostReport,
   AccountingSyncStatus,
+  CreateAccountInput,
   CreateTransactionInput,
   CreateInvoiceInput,
   CreateEmployeeInput,
@@ -582,6 +583,86 @@ export class StrateraDatabase {
       balance: r.balance as number,
       currency: r.currency as string,
     }));
+  }
+
+  createAccount(input: CreateAccountInput): Account {
+    const name = input.name.trim();
+    if (!name) throw new Error('Account name is required.');
+    if (this.accountExists(name)) throw new Error('An account with this name already exists.');
+
+    const validTypes = ['Asset', 'Liability', 'Equity', 'Income', 'Expense'];
+    if (!validTypes.includes(input.type)) throw new Error('Invalid account type.');
+
+    const currency = input.currency?.trim() || this.hrExt.getSettings().currency || 'USD';
+    const id = this.nextNumericId('ACC', 'accounts');
+
+    this.db
+      .prepare('INSERT INTO accounts (id, name, type, balance, currency) VALUES (?, ?, ?, 0, ?)')
+      .run(id, name, input.type, currency);
+
+    return { id, name, type: input.type, balance: 0, currency };
+  }
+
+  updateAccount(id: string, input: CreateAccountInput): Account | null {
+    const row = this.db
+      .prepare('SELECT * FROM accounts WHERE id = ?')
+      .get(id) as Record<string, unknown> | undefined;
+    if (!row) return null;
+
+    const oldName = row.name as string;
+    const name = input.name.trim();
+    if (!name) throw new Error('Account name is required.');
+    if (name !== oldName && this.accountExists(name)) {
+      throw new Error('An account with this name already exists.');
+    }
+
+    const validTypes = ['Asset', 'Liability', 'Equity', 'Income', 'Expense'];
+    if (!validTypes.includes(input.type)) throw new Error('Invalid account type.');
+
+    const currency = input.currency?.trim() || (row.currency as string);
+
+    this.db
+      .prepare('UPDATE accounts SET name = ?, type = ?, currency = ? WHERE id = ?')
+      .run(name, input.type, currency, id);
+
+    if (name !== oldName) {
+      this.db.prepare('UPDATE transactions SET account = ? WHERE account = ?').run(name, oldName);
+    }
+
+    return {
+      id,
+      name,
+      type: input.type,
+      balance: row.balance as number,
+      currency,
+    };
+  }
+
+  deleteAccount(id: string): boolean {
+    const row = this.db
+      .prepare('SELECT * FROM accounts WHERE id = ?')
+      .get(id) as Record<string, unknown> | undefined;
+    if (!row) return false;
+
+    const name = row.name as string;
+    const protectedNames = ['Cash & Bank', 'Operating Expenses'];
+    if (protectedNames.includes(name)) {
+      throw new Error('This system account cannot be deleted.');
+    }
+
+    const txn = this.db
+      .prepare('SELECT 1 AS ok FROM transactions WHERE account = ? LIMIT 1')
+      .get(name) as { ok: number } | undefined;
+    if (txn) {
+      throw new Error('Remove or reassign transactions before deleting this account.');
+    }
+
+    if (Number(row.balance) !== 0) {
+      throw new Error('Only accounts with a zero balance can be deleted.');
+    }
+
+    this.db.prepare('DELETE FROM accounts WHERE id = ?').run(id);
+    return true;
   }
 
   getTransactions(): Transaction[] {

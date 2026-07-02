@@ -373,6 +373,12 @@ export interface HrNavState {
   search?: string;
 }
 
+export interface CreateAccountInput {
+  name: string;
+  type: 'Asset' | 'Liability' | 'Equity' | 'Income' | 'Expense';
+  currency?: string;
+}
+
 export interface CreateTransactionInput {
   date: string;
   description: string;
@@ -536,6 +542,9 @@ export interface AuthApi {
 export interface AccountingApi extends AuthApi {
   getDashboardStats: () => Promise<AccountingDashboardStats>;
   getAccounts: () => Promise<Account[]>;
+  createAccount: (input: CreateAccountInput) => Promise<Account>;
+  updateAccount: (id: string, input: CreateAccountInput) => Promise<Account | null>;
+  deleteAccount: (id: string) => Promise<boolean>;
   getTransactions: () => Promise<Transaction[]>;
   getInvoices: () => Promise<Invoice[]>;
   createTransaction: (input: CreateTransactionInput) => Promise<Transaction>;
