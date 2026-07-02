@@ -390,6 +390,12 @@ export interface CreateInvoiceInput {
   status?: string;
 }
 
+export interface CreateAccountInput {
+  name: string;
+  type: 'Asset' | 'Liability' | 'Equity' | 'Income' | 'Expense';
+  currency?: string;
+}
+
 export interface CreateEmployeeInput {
   name: string;
   department: string;
