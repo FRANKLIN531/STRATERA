@@ -188,6 +188,31 @@ export function getAuthApi(module: 'accounting' | 'hr') {
 
     },
 
+    isSignUpVerificationEnabled: async () => {
+      try {
+        return await api.isSignUpVerificationEnabled();
+      } catch {
+        return false;
+      }
+    },
+
+    signUpStart: async (input) => {
+      try {
+        return await api.signUpStart(input);
+      } catch (err) {
+        return { ok: false as const, error: verificationErrorMessage(err) };
+      }
+    },
+
+    signUpComplete: async (email, code) => {
+      try {
+        const result = await api.signUpComplete(email, code);
+        return result ?? { ok: false, error: 'Could not complete sign up.' };
+      } catch (err) {
+        return { ok: false, error: verificationErrorMessage(err) };
+      }
+    },
+
   };
 
 }

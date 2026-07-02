@@ -13,6 +13,7 @@ export { Icons } from './icons';
 export { LoginScreen } from './components/LoginScreen';
 export { ResetPasswordScreen } from './components/ResetPasswordScreen';
 export { CredentialSetupScreen } from './components/CredentialSetupScreen';
+export { SignUpScreen } from './components/SignUpScreen';
 export { StrateraBrand } from './components/StrateraBrand';
 export { LoadingSpinner } from './components/LoadingSpinner';
 export { Modal, formFieldStyle } from './components/Modal';

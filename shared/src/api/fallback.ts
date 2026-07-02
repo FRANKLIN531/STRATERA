@@ -3,6 +3,7 @@ import type {
   HrApi,
   User,
   SmtpConfig,
+  SignUpInput,
   AccountingDashboardStats,
   Account,
   Transaction,
@@ -57,6 +58,7 @@ let verifiedCredentialEmail: string | null = null;
 const DEV_SMTP_KEY = 'stratera-dev-smtp';
 const DEV_USERS_KEY = 'stratera-dev-users';
 const DEV_VERIFIED_EMAIL_KEY = 'stratera-verified-credential-email';
+const DEV_SIGNUP_PENDING_KEY = 'stratera-dev-signup-pending';
 const DEV_DEPARTMENTS_KEY = 'stratera-dev-departments';
 const DEV_HR_SETTINGS_KEY = 'stratera-dev-hr-settings';
 
@@ -301,7 +303,22 @@ async function devSendEmployeeMessage(payload: {
   }
 }
 
-function authApi(requiredApp: 'accounting' | 'hr'): Pick<AccountingApi, 'login' | 'logout' | 'getCurrentUser' | 'isInitialSetupPending' | 'sendPasswordResetCode' | 'completePasswordResetWithCode' | 'completeCredentialUpdate' | 'sendCredentialEmailVerification' | 'verifyCredentialEmailCode' | 'verifyPassword'> {
+function authApi(requiredApp: 'accounting' | 'hr'): Pick<
+  AccountingApi,
+  | 'login'
+  | 'logout'
+  | 'getCurrentUser'
+  | 'isInitialSetupPending'
+  | 'sendPasswordResetCode'
+  | 'completePasswordResetWithCode'
+  | 'completeCredentialUpdate'
+  | 'sendCredentialEmailVerification'
+  | 'verifyCredentialEmailCode'
+  | 'verifyPassword'
+  | 'isSignUpVerificationEnabled'
+  | 'signUpStart'
+  | 'signUpComplete'
+> {
   return {
     login: async (email, password, module) => {
       const normalized = normalizeEmail(email);
@@ -310,9 +327,7 @@ function authApi(requiredApp: 'accounting' | 'hr'): Pick<AccountingApi, 'login' 
       if (!entry || entry.password !== password) return null;
       const target = module ?? requiredApp;
       if (entry.user.appAccess !== 'both' && entry.user.appAccess !== target) return null;
-      const requiresCredentialUpdate =
-        entry.user.role === 'Admin' && password === 'admin123';
-      mockUser = { ...entry.user, requiresCredentialUpdate };
+      mockUser = { ...entry.user, requiresCredentialUpdate: false };
       return mockUser;
     },
     logout: async () => {
@@ -456,6 +471,104 @@ function authApi(requiredApp: 'accounting' | 'hr'): Pick<AccountingApi, 'login' 
       if (!entry || entry.password !== password) {
         return { ok: false, error: 'Incorrect password.' };
       }
+      return { ok: true };
+    },
+    isSignUpVerificationEnabled: async () => {
+      if (window.stratera?.isElectron) return false;
+      return Boolean(readStoredSmtp());
+    },
+    signUpStart: async (input: SignUpInput) => {
+      const normalized = normalizeEmail(input.email);
+      if (!isValidEmail(normalized)) return { ok: false as const, error: 'Enter a valid email address.' };
+      const name = input.name.trim();
+      if (name.length < 2) return { ok: false as const, error: 'Enter your full name.' };
+      if (input.password.length < 6) {
+        return { ok: false as const, error: 'Password must be at least 6 characters.' };
+      }
+      if (input.password === 'admin123') {
+        return { ok: false as const, error: 'Choose a personal password — the default demo password cannot be used.' };
+      }
+      if (DEMO_USERS[normalized]) {
+        return { ok: false as const, error: 'An account with this email already exists. Sign in instead.' };
+      }
+      if (window.stratera?.isElectron) {
+        return { ok: false as const, error: 'Database not connected. Restart STRATERA.' };
+      }
+
+      const appAccess = input.appAccess ?? 'both';
+      const pending = { name, email: normalized, password: input.password, appAccess };
+      const smtp = readStoredSmtp();
+
+      if (!smtp) {
+        const id = `USR-${String(Object.keys(DEMO_USERS).length + 1).padStart(3, '0')}`;
+        const entry = {
+          password: input.password,
+          user: {
+            id,
+            email: normalized,
+            name,
+            role: 'User' as const,
+            appAccess,
+          },
+        };
+        DEMO_USERS[normalized] = entry;
+        storeDemoUser(normalized, entry);
+        return { ok: true as const, needsVerification: false };
+      }
+
+      try {
+        const result = await devSendVerification(normalized, smtp);
+        if (!result.ok) return { ok: false as const, error: result.error ?? 'Could not send verification code.' };
+        localStorage.setItem(DEV_SIGNUP_PENDING_KEY, JSON.stringify(pending));
+        return { ok: true as const, needsVerification: true };
+      } catch {
+        return { ok: false as const, error: 'Could not reach STRATERA dev server. Restart start-stratera.bat.' };
+      }
+    },
+    signUpComplete: async (email, code) => {
+      const normalized = normalizeEmail(email);
+      if (!isValidEmail(normalized)) return { ok: false, error: 'Enter a valid email address.' };
+      if (window.stratera?.isElectron) {
+        return { ok: false, error: 'Database not connected. Restart STRATERA.' };
+      }
+
+      let pending: { name: string; email: string; password: string; appAccess: 'both' | 'accounting' | 'hr' };
+      try {
+        const raw = localStorage.getItem(DEV_SIGNUP_PENDING_KEY);
+        if (!raw) return { ok: false, error: 'No sign-up request found. Start again from Create account.' };
+        pending = JSON.parse(raw) as typeof pending;
+        if (normalizeEmail(pending.email) !== normalized) {
+          return { ok: false, error: 'No sign-up request found. Start again from Create account.' };
+        }
+      } catch {
+        return { ok: false, error: 'No sign-up request found. Start again from Create account.' };
+      }
+
+      try {
+        const result = await devVerifyCode(normalized, code);
+        if (!result.ok) return { ok: false, error: result.error ?? 'Invalid verification code.' };
+      } catch {
+        return { ok: false, error: 'Could not verify code. Restart start-stratera.bat.' };
+      }
+
+      if (DEMO_USERS[normalized]) {
+        return { ok: false, error: 'An account with this email already exists.' };
+      }
+
+      const id = `USR-${String(Object.keys(DEMO_USERS).length + 1).padStart(3, '0')}`;
+      const entry = {
+        password: pending.password,
+        user: {
+          id,
+          email: normalized,
+          name: pending.name,
+          role: 'User' as const,
+          appAccess: pending.appAccess,
+        },
+      };
+      DEMO_USERS[normalized] = entry;
+      storeDemoUser(normalized, entry);
+      localStorage.removeItem(DEV_SIGNUP_PENDING_KEY);
       return { ok: true };
     },
   };

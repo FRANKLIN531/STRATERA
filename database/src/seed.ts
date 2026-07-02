@@ -13,7 +13,7 @@ export function seedDatabase(db: DbClient): void {
     'INSERT INTO users (id, email, password_hash, name, role, app_access, must_change_credentials) VALUES (?, ?, ?, ?, ?, ?, ?)',
   );
 
-  insertUser.run('USR-001', 'admin@stratera.com', hashPassword('admin123'), 'System Admin', 'Admin', 'both', 1);
+  insertUser.run('USR-001', 'admin@stratera.com', hashPassword('admin123'), 'System Admin', 'Admin', 'both', 0);
   insertUser.run('USR-002', 'accountant@stratera.com', hashPassword('account123'), 'Michael Thompson', 'Accountant', 'accounting', 0);
   insertUser.run('USR-003', 'hr@stratera.com', hashPassword('hr123'), 'Emily Rodriguez', 'HR Manager', 'hr', 0);
 

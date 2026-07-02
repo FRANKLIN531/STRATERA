@@ -16,6 +16,9 @@ const authApi = {
   verifyCredentialEmailCode: (email: string, code: string) =>
     ipcRenderer.invoke('auth:verifyCredentialEmailCode', email, code),
   verifyPassword: (password: string) => ipcRenderer.invoke('auth:verifyPassword', password),
+  isSignUpVerificationEnabled: () => ipcRenderer.invoke('auth:isSignUpVerificationEnabled'),
+  signUpStart: (input: unknown) => ipcRenderer.invoke('auth:signUpStart', input),
+  signUpComplete: (email: string, code: string) => ipcRenderer.invoke('auth:signUpComplete', email, code),
 };
 
 const accountingApi = {

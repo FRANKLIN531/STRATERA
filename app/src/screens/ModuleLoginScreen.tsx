@@ -8,17 +8,19 @@ interface ModuleLoginScreenProps {
   initialSetupPending: boolean;
   onLogin: (email: string, password: string) => Promise<boolean>;
   onResetPassword: () => void;
+  onSignUp: () => void;
   onBack: () => void;
 }
 
 const BOOTSTRAP_HINT =
-  'Use admin@stratera.com and admin123 to sign in and complete account setup.';
+  'New here? Create an account. Demo: admin@stratera.com / admin123';
 
 export function ModuleLoginScreen({
   module,
   initialSetupPending,
   onLogin,
   onResetPassword,
+  onSignUp,
   onBack,
 }: ModuleLoginScreenProps) {
   const [email, setEmail] = useState(() => (initialSetupPending ? 'admin@stratera.com' : ''));
@@ -60,7 +62,7 @@ export function ModuleLoginScreen({
           <p className="portal-step-label portal-auth-step">Step 2 of 2</p>
           <h2 className="portal-auth-heading">{labels.title}</h2>
           <p className="portal-auth-lead">
-            Sign in to access {labels.subtitle}. Your credentials are shared across all STRATERA desktops.
+            Sign in to access {labels.subtitle}. Your credentials work across all STRATERA desktops.
           </p>
         </div>
       </div>
@@ -84,7 +86,7 @@ export function ModuleLoginScreen({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="you@stratera.com"
+                placeholder="you@gmail.com"
               />
             </label>
 
@@ -116,6 +118,12 @@ export function ModuleLoginScreen({
               </button>
             </div>
           )}
+
+          <div style={{ textAlign: 'center', marginTop: 12 }}>
+            <button type="button" className="portal-link" onClick={onSignUp}>
+              Create an account
+            </button>
+          </div>
         </div>
       </div>
     </div>

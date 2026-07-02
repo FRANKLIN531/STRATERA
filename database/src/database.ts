@@ -4,6 +4,7 @@ import { migrateHrExtensions } from './hr-migrate';
 import { HrExtendedDb } from './hr-extended';
 import { isValidEmail, isValidPhone, isWorkEmail, normalizeEmail, normalizePhone } from './validation';
 import { CredentialEmailVerification } from './credential-email-verify';
+import { SignUpVerification } from './signup-verification';
 import { PasswordResetVerification } from './password-reset';
 import { sendEmployeeMessageEmail } from './mail';
 import { sleep } from './email-templates';
@@ -55,6 +56,7 @@ import type {
   UpdateLeaveBalanceInput,
   TerminateEmployeeInput,
   SmtpConfig,
+  SignUpInput,
 } from './types';
 
 export class StrateraDatabase {
@@ -62,12 +64,14 @@ export class StrateraDatabase {
   private currentUser: User | null = null;
   private hrExt: HrExtendedDb;
   private credentialEmail: CredentialEmailVerification;
+  private signUp: SignUpVerification;
   private passwordReset: PasswordResetVerification;
 
   constructor(db: DbClient) {
     this.db = db;
     this.hrExt = new HrExtendedDb(db);
     this.credentialEmail = new CredentialEmailVerification(db);
+    this.signUp = new SignUpVerification(db);
     this.passwordReset = new PasswordResetVerification(db);
     this.db.beginBatch();
     this.db.exec(getSchemaSql(this.db.engine));
@@ -113,13 +117,9 @@ export class StrateraDatabase {
     this.ensurePayrollAccounts();
 
     addColumnIfMissing(this.db, 'users', 'must_change_credentials', 'INTEGER NOT NULL DEFAULT 0');
-    if (this.db.engine === 'sqlite') {
-      this.db.exec(
-        "UPDATE users SET must_change_credentials = 1 WHERE role = 'Admin' AND email = 'admin@stratera.com'",
-      );
-    }
 
     this.credentialEmail.ensureTable();
+    this.signUp.ensureTable();
   }
 
   private seedJobPositionsIfEmpty(): void {
@@ -379,17 +379,15 @@ export class StrateraDatabase {
     this.db.close();
   }
 
-  private mapUserRow(row: Record<string, string | number>, passwordForCheck?: string): User {
+  private mapUserRow(row: Record<string, string | number>): User {
     const mustChangeFlag = row.must_change_credentials === 1 || row.must_change_credentials === '1';
-    const isDefaultAdminLogin =
-      row.role === 'Admin' && passwordForCheck === 'admin123';
     return {
       id: row.id as string,
       email: row.email as string,
       name: row.name as string,
       role: row.role as string,
       appAccess: row.app_access as User['appAccess'],
-      requiresCredentialUpdate: mustChangeFlag || isDefaultAdminLogin,
+      requiresCredentialUpdate: mustChangeFlag,
     };
   }
 
@@ -406,7 +404,7 @@ export class StrateraDatabase {
     const appAccess = row.app_access as User['appAccess'];
     if (appAccess !== 'both' && appAccess !== requiredApp) return null;
 
-    const user = this.mapUserRow(row, password);
+    const user = this.mapUserRow(row);
     this.currentUser = user;
     this.hrExt.setAuditUser(user.name);
     return user;
@@ -572,6 +570,69 @@ export class StrateraDatabase {
       .prepare('SELECT id FROM users WHERE must_change_credentials = 1 LIMIT 1')
       .get() as { id: string } | undefined;
     return !!row;
+  }
+
+  isSignUpVerificationEnabled(): boolean {
+    return this.signUp.isVerificationConfigured(this.smtpFromSettings());
+  }
+
+  async signUpStart(
+    input: SignUpInput,
+  ): Promise<{ ok: true; needsVerification: boolean } | { ok: false; error: string }> {
+    const normalized = normalizeEmail(input.email);
+    if (!isValidEmail(normalized)) {
+      return { ok: false, error: 'Enter a valid email address.' };
+    }
+
+    const appAccess = input.appAccess ?? 'both';
+    const pendingInput = {
+      name: input.name.trim(),
+      email: normalized,
+      password: input.password,
+      appAccess,
+    };
+
+    const smtp = this.smtpFromSettings();
+    const result = await this.signUp.startSignUp(pendingInput, smtp);
+
+    if (!result.ok) return result;
+
+    if (!result.needsVerification) {
+      this.insertUserFromSignUp({
+        name: pendingInput.name,
+        email: normalized,
+        passwordHash: hashPassword(input.password),
+        appAccess,
+      });
+    }
+
+    return result;
+  }
+
+  signUpComplete(email: string, code: string): { ok: true } | { ok: false; error: string } {
+    const normalized = normalizeEmail(email);
+    return this.signUp.verifyAndCreateUser(normalized, code, (pending) => {
+      this.insertUserFromSignUp(pending);
+    });
+  }
+
+  private insertUserFromSignUp(pending: {
+    name: string;
+    email: string;
+    passwordHash: string;
+    appAccess: 'both' | 'accounting' | 'hr';
+  }): void {
+    const duplicate = this.db
+      .prepare('SELECT id FROM users WHERE email = ?')
+      .get(pending.email) as { id: string } | undefined;
+    if (duplicate) {
+      throw new Error('An account with this email already exists.');
+    }
+
+    const id = this.nextNumericId('USR', 'users');
+    this.db.prepare(
+      'INSERT INTO users (id, email, password_hash, name, role, app_access, must_change_credentials) VALUES (?, ?, ?, ?, ?, ?, 0)',
+    ).run(id, pending.email, pending.passwordHash, pending.name, 'User', pending.appAccess);
   }
 
   getAccounts(): Account[] {

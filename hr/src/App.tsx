@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Layout, Icons, LoginScreen, LoadingSpinner, ResetPasswordScreen, CredentialSetupScreen } from '@stratera/shared';
+import { Layout, Icons, LoginScreen, LoadingSpinner, ResetPasswordScreen, SignUpScreen } from '@stratera/shared';
 import type { User } from '@stratera/shared';
 import { Dashboard } from './pages/Dashboard';
 import { Employees } from './pages/Employees';
@@ -56,14 +56,17 @@ export default function App() {
   const [activeNav, setActiveNav] = useState('dashboard');
   const [user, setUser] = useState<User | null>(null);
   const [checking, setChecking] = useState(true);
-  const [authScreen, setAuthScreen] = useState<'login' | 'reset'>('login');
+  const [authScreen, setAuthScreen] = useState<'login' | 'reset' | 'signup'>('login');
   const [initialSetupPending, setInitialSetupPending] = useState(true);
+  const [signUpVerificationEnabled, setSignUpVerificationEnabled] = useState(true);
   const api = getHrApi();
+  const authApi = getAuthApi();
 
   useEffect(() => {
     api.getCurrentUser().then((u) => {
       setUser(u);
       api.isInitialSetupPending().then(setInitialSetupPending);
+      authApi.isSignUpVerificationEnabled().then(setSignUpVerificationEnabled).catch(() => setSignUpVerificationEnabled(false));
       setChecking(false);
     });
   }, []);
@@ -72,18 +75,9 @@ export default function App() {
     const loggedIn = await api.login(email, password, 'hr');
     if (loggedIn) {
       setUser(loggedIn);
-      if (!loggedIn.requiresCredentialUpdate) setInitialSetupPending(false);
-    }
-    return !!loggedIn;
-  };
-
-  const handleCredentialUpdate = async (email: string, newPassword: string) => {
-    const updated = await api.completeCredentialUpdate(email, newPassword);
-    if (updated) {
-      setUser(updated);
       setInitialSetupPending(false);
     }
-    return !!updated;
+    return !!loggedIn;
   };
 
   const handleLogout = async () => {
@@ -115,6 +109,20 @@ export default function App() {
       );
     }
 
+    if (authScreen === 'signup') {
+      return (
+        <SignUpScreen
+          appTitle="STRATERA HR"
+          appSubtitle="R&D SOFTWARE GROUP"
+          verificationEnabled={signUpVerificationEnabled}
+          onSignUpStart={(input) => authApi.signUpStart(input)}
+          onSignUpComplete={(email, code) => authApi.signUpComplete(email, code)}
+          onBack={() => setAuthScreen('login')}
+          onSuccess={() => setAuthScreen('login')}
+        />
+      );
+    }
+
     return (
       <LoginScreen
         appTitle="STRATERA HR"
@@ -122,18 +130,7 @@ export default function App() {
         initialSetupPending={initialSetupPending}
         onLogin={handleLogin}
         onForgotPassword={() => setAuthScreen('reset')}
-      />
-    );
-  }
-
-  if (user?.requiresCredentialUpdate) {
-    const authApi = getAuthApi();
-    return (
-      <CredentialSetupScreen
-        currentEmail={user.email}
-        onSendVerification={(email, smtp) => authApi.sendCredentialEmailVerification(email, smtp)}
-        onVerifyCode={(email, code) => authApi.verifyCredentialEmailCode(email, code)}
-        onComplete={handleCredentialUpdate}
+        onSignUp={() => setAuthScreen('signup')}
       />
     );
   }

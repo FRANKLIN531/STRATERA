@@ -373,6 +373,13 @@ export interface HrNavState {
   search?: string;
 }
 
+export interface SignUpInput {
+  name: string;
+  email: string;
+  password: string;
+  appAccess?: 'both' | 'accounting' | 'hr';
+}
+
 export interface CreateAccountInput {
   name: string;
   type: 'Asset' | 'Liability' | 'Equity' | 'Income' | 'Expense';
@@ -530,6 +537,10 @@ export interface AuthApi {
     smtp: SmtpConfig,
   ) => Promise<{ ok: boolean; error?: string }>;
   verifyCredentialEmailCode: (email: string, code: string) => Promise<{ ok: boolean; error?: string }>;
+  verifyPassword: (password: string) => Promise<{ ok: boolean; error?: string }>;
+  isSignUpVerificationEnabled: () => Promise<boolean>;
+  signUpStart: (input: SignUpInput) => Promise<{ ok: true; needsVerification: boolean } | { ok: false; error: string }>;
+  signUpComplete: (email: string, code: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export interface AccountingApi extends AuthApi {

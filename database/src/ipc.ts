@@ -62,6 +62,22 @@ export function registerAllIpcHandlers(ipcMain: IpcMain, db: StrateraDatabase): 
     return result.ok ? { ok: true } : { ok: false, error: result.error };
   });
 
+  ipcMain.handle('auth:isSignUpVerificationEnabled', () => db.isSignUpVerificationEnabled());
+
+  ipcMain.handle('auth:signUpStart', async (_event, input) => {
+    try {
+      return await db.signUpStart(input);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { ok: false as const, error: msg || 'Could not create account.' };
+    }
+  });
+
+  ipcMain.handle('auth:signUpComplete', (_event, email: string, code: string) => {
+    const result = db.signUpComplete(email, code);
+    return result.ok ? { ok: true } : { ok: false, error: result.error };
+  });
+
   ipcMain.handle('accounting:getDashboardStats', () => db.getAccountingDashboardStats());
   ipcMain.handle('accounting:getAccounts', () => db.getAccounts());
   ipcMain.handle('accounting:createAccount', (_e, input) => db.createAccount(input));

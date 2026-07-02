@@ -10,10 +10,11 @@ interface LoginScreenProps {
   initialSetupPending?: boolean;
   onLogin: (email: string, password: string) => Promise<boolean>;
   onForgotPassword?: () => void;
+  onSignUp?: () => void;
 }
 
 const BOOTSTRAP_HINT =
-  'Use admin@stratera.com and admin123 to sign in and complete account setup.';
+  'New here? Create an account below. Demo login: admin@stratera.com / admin123';
 
 export function LoginScreen({
   appTitle,
@@ -21,6 +22,7 @@ export function LoginScreen({
   initialSetupPending = false,
   onLogin,
   onForgotPassword,
+  onSignUp,
 }: LoginScreenProps) {
   const [email, setEmail] = useState(() => (initialSetupPending ? 'admin@stratera.com' : ''));
   const [password, setPassword] = useState('');
@@ -168,6 +170,26 @@ export function LoginScreen({
                 }}
               >
                 Forgot password?
+              </button>
+            </div>
+          )}
+
+          {onSignUp && (
+            <div style={{ textAlign: 'center', marginTop: initialSetupPending ? 20 : 12 }}>
+              <button
+                type="button"
+                onClick={onSignUp}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: strateraTheme.colors.navy,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                Create an account
               </button>
             </div>
           )}

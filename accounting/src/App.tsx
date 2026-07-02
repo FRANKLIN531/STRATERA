@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Layout, Icons, LoginScreen, LoadingSpinner } from '@stratera/shared';
+import { Layout, Icons, LoginScreen, LoadingSpinner, ResetPasswordScreen, SignUpScreen } from '@stratera/shared';
 import type { User } from '@stratera/shared';
 import { Dashboard } from './pages/Dashboard';
 import { Accounts } from './pages/Accounts';
@@ -41,7 +41,9 @@ export default function App() {
   const [activeNav, setActiveNav] = useState('dashboard');
   const [user, setUser] = useState<User | null>(null);
   const [checking, setChecking] = useState(true);
+  const [authScreen, setAuthScreen] = useState<'login' | 'reset' | 'signup'>('login');
   const [initialSetupPending, setInitialSetupPending] = useState(true);
+  const [signUpVerificationEnabled, setSignUpVerificationEnabled] = useState(true);
   const api = getAccountingApi();
   const Page = pages[activeNav];
 
@@ -49,6 +51,7 @@ export default function App() {
     api.getCurrentUser().then((u) => {
       setUser(u);
       api.isInitialSetupPending().then(setInitialSetupPending);
+      api.isSignUpVerificationEnabled().then(setSignUpVerificationEnabled).catch(() => setSignUpVerificationEnabled(false));
       setChecking(false);
     });
   }, []);
@@ -57,7 +60,7 @@ export default function App() {
     const loggedIn = await api.login(email, password, 'accounting');
     if (loggedIn) {
       setUser(loggedIn);
-      if (!loggedIn.requiresCredentialUpdate) setInitialSetupPending(false);
+      setInitialSetupPending(false);
     }
     return !!loggedIn;
   };
@@ -65,6 +68,7 @@ export default function App() {
   const handleLogout = async () => {
     await api.logout();
     setUser(null);
+    setAuthScreen('login');
   };
 
   if (checking) {
@@ -76,12 +80,41 @@ export default function App() {
   }
 
   if (!user) {
+    if (authScreen === 'reset') {
+      return (
+        <ResetPasswordScreen
+          appTitle="STRATERA Accounting"
+          onSendResetCode={(email) => api.sendPasswordResetCode(email)}
+          onCompleteReset={(email, code, newPassword) =>
+            api.completePasswordResetWithCode(email, code, newPassword)
+          }
+          onBack={() => setAuthScreen('login')}
+        />
+      );
+    }
+
+    if (authScreen === 'signup') {
+      return (
+        <SignUpScreen
+          appTitle="STRATERA Accounting"
+          appSubtitle="R&D SOFTWARE GROUP"
+          verificationEnabled={signUpVerificationEnabled}
+          onSignUpStart={(input) => api.signUpStart(input)}
+          onSignUpComplete={(email, code) => api.signUpComplete(email, code)}
+          onBack={() => setAuthScreen('login')}
+          onSuccess={() => setAuthScreen('login')}
+        />
+      );
+    }
+
     return (
       <LoginScreen
         appTitle="STRATERA Accounting"
         appSubtitle="R&D SOFTWARE GROUP"
         initialSetupPending={initialSetupPending}
         onLogin={handleLogin}
+        onForgotPassword={() => setAuthScreen('reset')}
+        onSignUp={() => setAuthScreen('signup')}
       />
     );
   }
