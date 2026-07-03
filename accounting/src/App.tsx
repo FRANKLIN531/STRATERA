@@ -8,6 +8,7 @@ import { Invoices } from './pages/Invoices';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { getAccountingApi } from './api';
+import { useActiveCurrency } from './hooks/useActiveCurrency';
 import './styles/accounting-dashboard.css';
 
 const navItems = [
@@ -45,6 +46,7 @@ export default function App() {
   const [initialSetupPending, setInitialSetupPending] = useState(true);
   const [signUpVerificationEnabled, setSignUpVerificationEnabled] = useState(true);
   const api = getAccountingApi();
+  const currency = useActiveCurrency();
   const Page = pages[activeNav];
 
   useEffect(() => {
@@ -130,7 +132,7 @@ export default function App() {
       userName={user.name}
       onLogout={handleLogout}
     >
-      <Page />
+      <Page key={activeNav === 'settings' ? 'settings' : currency} />
     </Layout>
   );
 }

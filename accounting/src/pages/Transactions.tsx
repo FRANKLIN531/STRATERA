@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Button, Badge, LoadingSpinner, useAsyncData, usePagination,
-  Modal, formFieldStyle, Icons, ConfirmDialog, Select,
+  Modal, formFieldStyle, Icons, ConfirmDialog, Select, getActiveCurrency,
 } from '@stratera/shared';
 import type { CreateTransactionInput, Transaction } from '@stratera/shared';
 import { getAccountingApi } from '../api';
@@ -352,7 +352,7 @@ export function Transactions() {
               />
             </label>
             <label style={formFieldStyle.field}>
-              <span style={formFieldStyle.label}>Amount (USD)</span>
+              <span style={formFieldStyle.label}>{`Amount (${getActiveCurrency()})`}</span>
               <input type="number" min="0" step="0.01" style={formFieldStyle.input} value={form.amount || ''}
                 onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })} />
             </label>

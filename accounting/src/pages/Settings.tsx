@@ -1,9 +1,64 @@
-import { Select } from '@stratera/shared';
-import { Icons } from '@stratera/shared';
+import { useState } from 'react';
+import { Select, Icons, HR_CURRENCY_OPTIONS, currencyLabel, setActiveCurrency } from '@stratera/shared';
 import { SectionHeader } from '../components/SectionHeader';
 import { MetricCard } from '../components/MetricCard';
+import { useActiveCurrency } from '../hooks/useActiveCurrency';
+
+const FISCAL_YEAR_KEY = 'stratera-accounting-fiscal-year';
+const COMPANY_NAME_KEY = 'stratera-accounting-company-name';
+
+const FISCAL_MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+function readStored(key: string, fallback: string): string {
+  try {
+    return localStorage.getItem(key)?.trim() || fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export function Settings() {
+  const currency = useActiveCurrency();
+  const [fiscalYear, setFiscalYear] = useState(() => readStored(FISCAL_YEAR_KEY, 'January'));
+  const [companyName, setCompanyName] = useState(() =>
+    readStored(COMPANY_NAME_KEY, 'STRATERA R&D Software Group'),
+  );
+  const [savedNote, setSavedNote] = useState('');
+
+  const flashSaved = (message: string) => {
+    setSavedNote(message);
+    window.setTimeout(() => setSavedNote(''), 2500);
+  };
+
+  const handleCurrencyChange = (code: string) => {
+    setActiveCurrency(code);
+    flashSaved(`Currency updated to ${currencyLabel(code)}.`);
+  };
+
+  const handleFiscalYearChange = (month: string) => {
+    setFiscalYear(month);
+    try {
+      localStorage.setItem(FISCAL_YEAR_KEY, month);
+    } catch {
+      /* ignore */
+    }
+    flashSaved(`Fiscal year start set to ${month}.`);
+  };
+
+  const handleCompanyBlur = () => {
+    const name = companyName.trim() || 'STRATERA R&D Software Group';
+    setCompanyName(name);
+    try {
+      localStorage.setItem(COMPANY_NAME_KEY, name);
+    } catch {
+      /* ignore */
+    }
+    flashSaved('Company name saved.');
+  };
+
   return (
     <div className="hr-page container-fluid px-0">
       <header className="hr-page-header">
@@ -16,10 +71,16 @@ export function Settings() {
         </div>
       </header>
 
+      {savedNote && (
+        <div className="alert alert-success py-2 px-3 shadow-sm mb-4" role="status">
+          <span className="small">{savedNote}</span>
+        </div>
+      )}
+
       <div className="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-3 mb-4">
         <MetricCard
           label="Company"
-          value="STRATERA R&D"
+          value={companyName.split(' ')[0] || 'STRATERA'}
           meta="Software Group"
           accent="settings"
           icon={<Icons.Settings />}
@@ -27,7 +88,7 @@ export function Settings() {
         />
         <MetricCard
           label="Fiscal Year"
-          value="January"
+          value={fiscalYear}
           meta="Year start month"
           accent="accounts"
           icon={<Icons.Reports />}
@@ -35,7 +96,7 @@ export function Settings() {
         />
         <MetricCard
           label="Currency"
-          value="USD"
+          value={currency}
           meta="Default reporting currency"
           accent="revenue"
           icon={<Icons.Dollar />}
@@ -56,36 +117,37 @@ export function Settings() {
               <div className="hr-settings-form-grid">
                 <div className="hr-settings-field-span-2">
                   <label className="form-label">Company Name</label>
-                  <input type="text" className="form-control" value="STRATERA R&D Software Group" readOnly />
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    onBlur={handleCompanyBlur}
+                  />
                 </div>
                 <div>
                   <label className="form-label">Fiscal Year Start</label>
                   <Select
-                    value="January"
-                    onChange={() => undefined}
-                    options={[
-                      { value: 'January', label: 'January' },
-                      { value: 'April', label: 'April' },
-                      { value: 'July', label: 'July' },
-                    ]}
+                    value={fiscalYear}
+                    onChange={handleFiscalYearChange}
+                    options={FISCAL_MONTHS.map((m) => ({ value: m, label: m }))}
                   />
                 </div>
                 <div>
                   <label className="form-label">Default Currency</label>
                   <Select
-                    value="USD"
-                    onChange={() => undefined}
-                    options={[
-                      { value: 'USD', label: 'USD — US Dollar' },
-                      { value: 'EUR', label: 'EUR — Euro' },
-                      { value: 'GBP', label: 'GBP — British Pound' },
-                      { value: 'GHS', label: 'GHS — Ghana Cedi' },
-                    ]}
+                    value={currency}
+                    onChange={handleCurrencyChange}
+                    options={HR_CURRENCY_OPTIONS.map((c) => ({
+                      value: c.code,
+                      label: `${c.code} — ${c.label}`,
+                    }))}
                   />
                 </div>
               </div>
               <p className="small text-muted mt-3 mb-0">
-                Editable company settings will be available in a future update. Values shown are used for PDF exports today.
+                Currency changes apply immediately to every amount across the Accounting desktop and
+                PDF exports.
               </p>
             </div>
           </div>

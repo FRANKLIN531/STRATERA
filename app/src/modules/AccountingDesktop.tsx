@@ -8,6 +8,7 @@ import { Invoices } from '@accounting/pages/Invoices';
 import { Reports } from '@accounting/pages/Reports';
 import { Settings } from '@accounting/pages/Settings';
 import { getAccountingApi } from '../api';
+import { useActiveCurrency } from '@accounting/hooks/useActiveCurrency';
 import '@accounting/styles/accounting-dashboard.css';
 
 const navItems = [
@@ -45,6 +46,7 @@ interface AccountingDesktopProps {
 export function AccountingDesktop({ user, onLogout }: AccountingDesktopProps) {
   const [activeNav, setActiveNav] = useState('dashboard');
   const api = getAccountingApi();
+  const currency = useActiveCurrency();
   const Page = pages[activeNav];
 
   const handleLogout = async () => {
@@ -62,7 +64,7 @@ export function AccountingDesktop({ user, onLogout }: AccountingDesktopProps) {
       userName={user.name}
       onLogout={handleLogout}
     >
-      <Page />
+      <Page key={activeNav === 'settings' ? 'settings' : currency} />
     </Layout>
   );
 }
