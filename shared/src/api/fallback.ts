@@ -770,7 +770,13 @@ export function createAccountingFallbackApi(): AccountingApi {
       return true;
     },
     getTransactions: async () => transactions,
-    getInvoices: async () => invoices,
+    getInvoices: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      for (const inv of invoices) {
+        if (inv.status === 'Sent' && inv.dueDate < today) inv.status = 'Overdue';
+      }
+      return invoices;
+    },
     createTransaction: async (input: CreateTransactionInput) => {
       const amount = input.type === 'Expense' ? -Math.abs(input.amount) : Math.abs(input.amount);
       const txn: Transaction = {
@@ -795,6 +801,7 @@ export function createAccountingFallbackApi(): AccountingApi {
         dueDate: input.dueDate,
         amount: input.amount,
         status: input.status ?? 'Draft',
+        description: input.description?.trim() || 'Professional services',
       };
       invoices.unshift(inv);
       return inv;

@@ -3,16 +3,17 @@ import type { ChangeEvent } from 'react';
 import {
   Select, Icons, HR_CURRENCY_OPTIONS, currencyLabel, setActiveCurrency,
   downloadTextFile, readFileAsText,
+  ACCOUNTING_COMPANY_NAME_KEY,
+  ACCOUNTING_COMPANY_ADDRESS_KEY,
+  ACCOUNTING_COMPANY_EMAIL_KEY,
 } from '@stratera/shared';
 import { SectionHeader } from '../components/SectionHeader';
 import { MetricCard } from '../components/MetricCard';
 import { getAccountingApi } from '../api';
 import { useActiveCurrency } from '../hooks/useActiveCurrency';
+import { FISCAL_YEAR_KEY } from '../utils/companySettings';
 
 const api = getAccountingApi();
-
-const FISCAL_YEAR_KEY = 'stratera-accounting-fiscal-year';
-const COMPANY_NAME_KEY = 'stratera-accounting-company-name';
 
 const FISCAL_MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -31,7 +32,13 @@ export function Settings() {
   const currency = useActiveCurrency();
   const [fiscalYear, setFiscalYear] = useState(() => readStored(FISCAL_YEAR_KEY, 'January'));
   const [companyName, setCompanyName] = useState(() =>
-    readStored(COMPANY_NAME_KEY, 'STRATERA R&D Software Group'),
+    readStored(ACCOUNTING_COMPANY_NAME_KEY, 'STRATERA R&D Software Group'),
+  );
+  const [companyAddress, setCompanyAddress] = useState(() =>
+    readStored(ACCOUNTING_COMPANY_ADDRESS_KEY, ''),
+  );
+  const [companyEmail, setCompanyEmail] = useState(() =>
+    readStored(ACCOUNTING_COMPANY_EMAIL_KEY, ''),
   );
   const [savedNote, setSavedNote] = useState('');
   const [backingUp, setBackingUp] = useState(false);
@@ -90,7 +97,7 @@ export function Settings() {
   const handleCompanyChange = (value: string) => {
     setCompanyName(value);
     try {
-      localStorage.setItem(COMPANY_NAME_KEY, value.trim() || 'STRATERA R&D Software Group');
+      localStorage.setItem(ACCOUNTING_COMPANY_NAME_KEY, value.trim() || 'STRATERA R&D Software Group');
     } catch {
       /* ignore */
     }
@@ -100,11 +107,20 @@ export function Settings() {
     const name = companyName.trim() || 'STRATERA R&D Software Group';
     setCompanyName(name);
     try {
-      localStorage.setItem(COMPANY_NAME_KEY, name);
+      localStorage.setItem(ACCOUNTING_COMPANY_NAME_KEY, name);
     } catch {
       /* ignore */
     }
     flashSaved('Company name saved.');
+  };
+
+  const persistField = (key: string, value: string, label: string) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* ignore */
+    }
+    flashSaved(`${label} saved.`);
   };
 
   return (
@@ -173,6 +189,28 @@ export function Settings() {
                     onBlur={handleCompanyBlur}
                   />
                 </div>
+                <div className="hr-settings-field-span-2">
+                  <label className="form-label">Company Address</label>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    placeholder="Street, city, country"
+                    value={companyAddress}
+                    onChange={(e) => setCompanyAddress(e.target.value)}
+                    onBlur={() => persistField(ACCOUNTING_COMPANY_ADDRESS_KEY, companyAddress.trim(), 'Address')}
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Company Email</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    placeholder="billing@yourcompany.com"
+                    value={companyEmail}
+                    onChange={(e) => setCompanyEmail(e.target.value)}
+                    onBlur={() => persistField(ACCOUNTING_COMPANY_EMAIL_KEY, companyEmail.trim(), 'Email')}
+                  />
+                </div>
                 <div>
                   <label className="form-label">Fiscal Year Start</label>
                   <Select
@@ -194,8 +232,8 @@ export function Settings() {
                 </div>
               </div>
               <p className="small text-muted mt-3 mb-0">
-                Currency changes apply immediately to every amount across the Accounting desktop and
-                PDF exports.
+                Company details appear on invoice PDFs and financial reports. Currency changes apply
+                immediately across the Accounting desktop.
               </p>
             </div>
           </div>

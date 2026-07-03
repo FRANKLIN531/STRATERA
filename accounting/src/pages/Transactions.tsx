@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Button, Badge, LoadingSpinner, useAsyncData, usePagination,
-  Modal, formFieldStyle, Icons, ConfirmDialog, Select, getActiveCurrency,
+  Modal, formFieldStyle, Icons, ConfirmDialog, Select, getActiveCurrency, exportToCsv,
 } from '@stratera/shared';
 import type { CreateTransactionInput, Transaction } from '@stratera/shared';
 import { getAccountingApi } from '../api';
@@ -121,6 +121,16 @@ export function Transactions() {
     }
   };
 
+  const handleExportCsv = () => {
+    exportToCsv(
+      `transactions-${today}.csv`,
+      ['ID', 'Date', 'Description', 'Account', 'Type', 'Amount', 'Status'],
+      list.map((t) => [
+        t.id, t.date, t.description, t.account, t.type, String(t.amount), t.status,
+      ]),
+    );
+  };
+
   if (loading) return <LoadingSpinner />;
 
   return (
@@ -132,7 +142,10 @@ export function Transactions() {
             title="Transactions"
             subtitle="View, filter, and manage all financial transactions"
           />
-          <div className="hr-page-actions">
+          <div className="hr-page-actions d-flex flex-wrap gap-2">
+            <Button variant="outline" onClick={handleExportCsv}>
+              Export CSV
+            </Button>
             <Button onClick={openCreate}>
               <Icons.Plus />
               New Transaction

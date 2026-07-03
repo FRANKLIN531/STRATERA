@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import type { Invoice } from '../api/types';
+import { getAccountingCompanyAddress, getAccountingCompanyEmail, getAccountingCompanyName } from '../utils/accountingCompany';
 import { addBrandedHeader, addFooter, formatMoney, savePdf, pdfDataUri, pdfBase64 } from './branding';
 
 export interface InvoicePdfOptions {
@@ -34,7 +35,7 @@ export function buildInvoicePdf(invoice: Invoice, options: InvoicePdfOptions = {
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
-  const description = options.description?.trim() || 'Professional services';
+  const description = options.description?.trim() || invoice.description?.trim() || 'Professional services';
   const descLines = doc.splitTextToSize(description, 130);
   doc.text(descLines, 14, startY + 56);
   doc.text(formatMoney(invoice.amount, options.currency), 160, startY + 56);
@@ -50,7 +51,19 @@ export function buildInvoicePdf(invoice: Invoice, options: InvoicePdfOptions = {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);
   doc.text('Thank you for your business.', 14, cursorY);
-  doc.text('STRATERA R&D Software Group', 14, cursorY + 8);
+  const companyName = getAccountingCompanyName();
+  doc.text(companyName, 14, cursorY + 8);
+  const address = getAccountingCompanyAddress();
+  const email = getAccountingCompanyEmail();
+  let footerY = cursorY + 16;
+  if (address) {
+    const addrLines = doc.splitTextToSize(address, 120);
+    doc.text(addrLines, 14, footerY);
+    footerY += addrLines.length * 5 + 2;
+  }
+  if (email) {
+    doc.text(email, 14, footerY);
+  }
 
   addFooter(doc);
   return doc;

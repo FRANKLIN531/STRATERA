@@ -20,7 +20,7 @@ interface InvoicePreviewModalProps {
 const labelStyle = { fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 4 } as const;
 
 export function InvoicePreviewModal({ invoice, initialMode = 'preview', onClose }: InvoicePreviewModalProps) {
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(invoice.description ?? '');
   const [recipient, setRecipient] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);

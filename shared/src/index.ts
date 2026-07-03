@@ -44,6 +44,7 @@ export {
 export type { EmployeeReportData, InvoicePdfOptions } from './pdf';
 export { exportToCsv, downloadTextFile, readFileAsText, readFileAsBase64 } from './utils/csvExport';
 export { formatMoney, getActiveCurrency, getStoredCurrency, setActiveCurrency, resolveCurrencyCode, currencyLabel, HR_CURRENCY_OPTIONS, HR_CURRENCY_STORAGE_KEY, HR_CURRENCY_CHANGED_EVENT } from './utils/currency';
+export { getAccountingCompanyName, getAccountingCompanyAddress, getAccountingCompanyEmail, ACCOUNTING_COMPANY_NAME_KEY, ACCOUNTING_COMPANY_ADDRESS_KEY, ACCOUNTING_COMPANY_EMAIL_KEY } from './utils/accountingCompany';
 export {
   isValidEmail,
   isValidPhone,

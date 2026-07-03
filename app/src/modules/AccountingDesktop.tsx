@@ -9,6 +9,7 @@ import { Reports } from '@accounting/pages/Reports';
 import { Settings } from '@accounting/pages/Settings';
 import { getAccountingApi } from '../api';
 import { useActiveCurrency } from '@accounting/hooks/useActiveCurrency';
+import { AccountingNavContext } from '@accounting/context/AccountingNavContext';
 import '@accounting/styles/accounting-dashboard.css';
 
 const navItems = [
@@ -55,16 +56,18 @@ export function AccountingDesktop({ user, onLogout }: AccountingDesktopProps) {
   };
 
   return (
-    <Layout
-      appName={pageTitles[activeNav]}
-      appSubtitle="ACCOUNTING"
-      navItems={navItems}
-      activeNav={activeNav}
-      onNavChange={setActiveNav}
-      userName={user.name}
-      onLogout={handleLogout}
-    >
-      <Page key={activeNav === 'settings' ? 'settings' : currency} />
-    </Layout>
+    <AccountingNavContext.Provider value={setActiveNav}>
+      <Layout
+        appName={pageTitles[activeNav]}
+        appSubtitle="ACCOUNTING"
+        navItems={navItems}
+        activeNav={activeNav}
+        onNavChange={setActiveNav}
+        userName={user.name}
+        onLogout={handleLogout}
+      >
+        <Page key={activeNav === 'settings' ? 'settings' : currency} />
+      </Layout>
+    </AccountingNavContext.Provider>
   );
 }

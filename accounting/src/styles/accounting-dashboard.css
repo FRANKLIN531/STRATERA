@@ -1627,3 +1627,11 @@
   background: #fef3c7;
   color: #b45309;
 }
+
+.acc-recent-invoices .list-group-item {
+  border-color: #f1f5f9;
+}
+
+.acc-recent-invoices .list-group-item:first-child {
+  border-top: none;
+}

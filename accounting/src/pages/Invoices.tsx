@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   Button, Badge, LoadingSpinner, useAsyncData, usePagination,
   Modal, formFieldStyle, Icons,
-  ConfirmDialog, Select, getActiveCurrency,
+  ConfirmDialog, Select, getActiveCurrency, exportToCsv,
 } from '@stratera/shared';
 import type { CreateInvoiceInput, Invoice } from '@stratera/shared';
 import { getAccountingApi } from '../api';
@@ -23,6 +23,7 @@ const emptyForm: CreateInvoiceInput = {
   dueDate: defaultDue,
   amount: 0,
   status: 'Draft',
+  description: 'Professional services',
 };
 
 const statusVariant = (status: string) => {
@@ -88,8 +89,19 @@ export function Invoices() {
       dueDate: inv.dueDate,
       amount: inv.amount,
       status: inv.status,
+      description: inv.description ?? 'Professional services',
     });
     setShowForm(true);
+  };
+
+  const handleExportCsv = () => {
+    exportToCsv(
+      `invoices-${today}.csv`,
+      ['Invoice #', 'Client', 'Issue Date', 'Due Date', 'Amount', 'Status', 'Description'],
+      list.map((i) => [
+        i.id, i.client, i.date, i.dueDate, String(i.amount), i.status, i.description ?? '',
+      ]),
+    );
   };
 
   const handleSubmit = async () => {
@@ -133,7 +145,10 @@ export function Invoices() {
             title="Invoices"
             subtitle="Create, send, and track client invoices"
           />
-          <div className="hr-page-actions">
+          <div className="hr-page-actions d-flex flex-wrap gap-2">
+            <Button variant="outline" onClick={handleExportCsv}>
+              Export CSV
+            </Button>
             <Button onClick={openCreate}>
               <Icons.Plus />
               Create Invoice
@@ -300,6 +315,11 @@ export function Invoices() {
               <span style={formFieldStyle.label}>Due Date</span>
               <input type="date" style={formFieldStyle.input} value={form.dueDate}
                 onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+            </label>
+            <label style={formFieldStyle.field}>
+              <span style={formFieldStyle.label}>Description</span>
+              <input type="text" style={formFieldStyle.input} value={form.description ?? ''}
+                onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </label>
             <label style={formFieldStyle.field}>
               <span style={formFieldStyle.label}>{`Amount (${getActiveCurrency()})`}</span>

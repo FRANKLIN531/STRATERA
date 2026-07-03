@@ -126,6 +126,7 @@ export class StrateraDatabase {
     this.ensurePayrollAccounts();
 
     addColumnIfMissing(this.db, 'users', 'must_change_credentials', 'INTEGER NOT NULL DEFAULT 0');
+    addColumnIfMissing(this.db, 'invoices', 'description', "TEXT NOT NULL DEFAULT 'Professional services'");
 
     this.credentialEmail.ensureTable();
     this.signUp.ensureTable();
@@ -766,6 +767,7 @@ export class StrateraDatabase {
   }
 
   getInvoices(): Invoice[] {
+    this.refreshOverdueInvoices();
     const rows = this.db
       .prepare('SELECT * FROM invoices ORDER BY date DESC, id DESC')
       .all() as Record<string, unknown>[];
@@ -776,10 +778,20 @@ export class StrateraDatabase {
       dueDate: r.due_date as string,
       amount: r.amount as number,
       status: r.status as string,
+      description: (r.description as string) || 'Professional services',
     }));
   }
 
+  /** Mark sent invoices past their due date as Overdue. */
+  private refreshOverdueInvoices(): void {
+    const today = this.formatDateOnly(new Date());
+    this.db
+      .prepare("UPDATE invoices SET status = 'Overdue' WHERE status = 'Sent' AND due_date < ?")
+      .run(today);
+  }
+
   getAccountingDashboardStats(): AccountingDashboardStats {
+    this.refreshOverdueInvoices();
     const revenue = (this.db
       .prepare('SELECT balance FROM accounts WHERE type = ?')
       .get('Income') as { balance: number } | undefined)?.balance ?? 0;
@@ -793,6 +805,11 @@ export class StrateraDatabase {
     const pendingCount = this.db
       .prepare('SELECT COUNT(*) as count FROM invoices WHERE status IN (?, ?)')
       .get('Sent', 'Overdue') as { count: number };
+    const overdueCount = this.db
+      .prepare("SELECT COUNT(*) as count FROM invoices WHERE status = 'Overdue'")
+      .get() as { count: number };
+
+    const revenuePct = revenue > 0 ? Math.round(((revenue - expenses) / revenue) * 100) : 0;
 
     return {
       totalRevenue: revenue,
@@ -800,9 +817,10 @@ export class StrateraDatabase {
       netProfit: revenue - expenses,
       outstandingInvoices: outstanding.total,
       pendingInvoiceCount: pendingCount.count,
-      revenueChange: '+12.5% from last month',
-      expenseChange: '+3.2% from last month',
-      profitChange: '+18.7% from last month',
+      revenueChange: `${revenuePct}% profit margin`,
+      expenseChange: expenses > 0 ? 'Expenses on record' : 'No expenses recorded',
+      profitChange: revenue - expenses >= 0 ? 'Profitable period' : 'Operating at a loss',
+      overdueInvoiceCount: overdueCount.count,
     };
   }
 
@@ -1165,12 +1183,13 @@ export class StrateraDatabase {
     const lastNum = row ? parseInt(row.id.split('-').pop() ?? '0', 10) : 0;
     const id = `INV-${year}-${String(lastNum + 1).padStart(3, '0')}`;
     const status = input.status ?? 'Draft';
+    const description = input.description?.trim() || 'Professional services';
 
     this.db
       .prepare(
-        'INSERT INTO invoices (id, client, date, due_date, amount, status) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO invoices (id, client, date, due_date, amount, status, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
       )
-      .run(id, input.client, input.date, input.dueDate, input.amount, status);
+      .run(id, input.client, input.date, input.dueDate, input.amount, status, description);
 
     return {
       id,
@@ -1179,6 +1198,7 @@ export class StrateraDatabase {
       dueDate: input.dueDate,
       amount: input.amount,
       status,
+      description,
     };
   }
 
@@ -1186,11 +1206,13 @@ export class StrateraDatabase {
     const exists = this.db.prepare('SELECT id FROM invoices WHERE id = ?').get(id);
     if (!exists) return null;
 
+    const description = input.description?.trim() || 'Professional services';
+
     this.db
       .prepare(
-        'UPDATE invoices SET client = ?, date = ?, due_date = ?, amount = ?, status = ? WHERE id = ?',
+        'UPDATE invoices SET client = ?, date = ?, due_date = ?, amount = ?, status = ?, description = ? WHERE id = ?',
       )
-      .run(input.client, input.date, input.dueDate, input.amount, input.status ?? 'Draft', id);
+      .run(input.client, input.date, input.dueDate, input.amount, input.status ?? 'Draft', description, id);
 
     return {
       id,
@@ -1199,6 +1221,7 @@ export class StrateraDatabase {
       dueDate: input.dueDate,
       amount: input.amount,
       status: input.status ?? 'Draft',
+      description,
     };
   }
 

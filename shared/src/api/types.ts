@@ -32,6 +32,7 @@ export interface Invoice {
   dueDate: string;
   amount: number;
   status: string;
+  description?: string;
 }
 
 export interface AccountingDashboardStats {
@@ -43,6 +44,7 @@ export interface AccountingDashboardStats {
   revenueChange: string;
   expenseChange: string;
   profitChange: string;
+  overdueInvoiceCount?: number;
 }
 
 export interface Employee {
@@ -401,6 +403,7 @@ export interface CreateInvoiceInput {
   dueDate: string;
   amount: number;
   status?: string;
+  description?: string;
 }
 
 export interface CreateEmployeeInput {
