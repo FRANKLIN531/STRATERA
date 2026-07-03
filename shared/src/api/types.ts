@@ -543,6 +543,15 @@ export interface AuthApi {
   signUpComplete: (email: string, code: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
+export interface SendInvoiceEmailInput {
+  invoice: Invoice;
+  to: string;
+  pdfBase64: string;
+  filename: string;
+  note?: string;
+  message?: string;
+}
+
 export interface AccountingApi extends AuthApi {
   getDashboardStats: () => Promise<AccountingDashboardStats>;
   getAccounts: () => Promise<Account[]>;
@@ -558,6 +567,9 @@ export interface AccountingApi extends AuthApi {
   updateInvoice: (id: string, input: CreateInvoiceInput) => Promise<Invoice | null>;
   deleteInvoice: (id: string) => Promise<boolean>;
   emailInvoice: (invoice: Invoice) => Promise<boolean>;
+  sendInvoiceEmail: (payload: SendInvoiceEmailInput) => Promise<{ ok: boolean; error?: string }>;
+  exportAccountingBackup: () => Promise<string>;
+  importAccountingBackup: (jsonText: string) => Promise<boolean>;
 }
 
 export interface HrApi extends AuthApi {

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Button, Badge, LoadingSpinner, useAsyncData, usePagination,
-  Modal, formFieldStyle, Icons, exportInvoicePdf,
+  Modal, formFieldStyle, Icons,
   ConfirmDialog, Select, getActiveCurrency,
 } from '@stratera/shared';
 import type { CreateInvoiceInput, Invoice } from '@stratera/shared';
@@ -10,6 +10,7 @@ import { MetricCard } from '../components/MetricCard';
 import { SectionHeader } from '../components/SectionHeader';
 import { EmptyState } from '../components/EmptyState';
 import { TablePagination } from '../components/TablePagination';
+import { InvoicePreviewModal } from '../components/InvoicePreviewModal';
 import { formatCurrency } from '../utils/format';
 import { SearchIcon } from '../components/SearchIcon';
 
@@ -45,6 +46,7 @@ export function Invoices() {
   const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [preview, setPreview] = useState<{ invoice: Invoice; mode: 'preview' | 'email' } | null>(null);
 
   const list = invoices ?? [];
 
@@ -254,8 +256,8 @@ export function Invoices() {
                         <div className="hr-table-actions flex-wrap">
                           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => openEdit(row)}>Edit</button>
                           <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setDeleteId(row.id)}>Delete</button>
-                          <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => api.emailInvoice(row)}>Email</button>
-                          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => exportInvoicePdf(row)}>PDF</button>
+                          <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setPreview({ invoice: row, mode: 'email' })}>Email</button>
+                          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setPreview({ invoice: row, mode: 'preview' })}>PDF</button>
                         </div>
                       </td>
                     </tr>
@@ -329,6 +331,14 @@ export function Invoices() {
           onConfirm={handleDelete}
           onCancel={() => setDeleteId(null)}
           loading={deleting}
+        />
+      )}
+
+      {preview && (
+        <InvoicePreviewModal
+          invoice={preview.invoice}
+          initialMode={preview.mode}
+          onClose={() => setPreview(null)}
         />
       )}
     </div>

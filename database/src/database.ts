@@ -6,11 +6,11 @@ import { isValidEmail, isValidPhone, isWorkEmail, normalizeEmail, normalizePhone
 import { CredentialEmailVerification } from './credential-email-verify';
 import { SignUpVerification } from './signup-verification';
 import { PasswordResetVerification } from './password-reset';
-import { sendEmployeeMessageEmail } from './mail';
-import { sleep } from './email-templates';
-import type { SendMessageFailure, SendMessageResult } from './types';
+import { sendEmployeeMessageEmail, sendInvoiceEmail as sendInvoiceEmailMail } from './mail';
+import { sleep, escapeHtml } from './email-templates';
+import type { SendInvoiceEmailInput, SendMessageFailure, SendMessageResult } from './types';
 import type { DbClient } from './db-client';
-import { addColumnIfMissing } from './dialect';
+import { addColumnIfMissing, sqlReplaceRow } from './dialect';
 import type {
   User,
   Account,
@@ -734,10 +734,6 @@ export class StrateraDatabase {
     if (!row) return false;
 
     const name = row.name as string;
-    const protectedNames = ['Cash & Bank', 'Operating Expenses'];
-    if (protectedNames.includes(name)) {
-      throw new Error('This system account cannot be deleted.');
-    }
 
     const txn = this.db
       .prepare('SELECT 1 AS ok FROM transactions WHERE account = ? LIMIT 1')
@@ -1976,6 +1972,101 @@ export class StrateraDatabase {
 
   importHrBackup(jsonText: string): boolean {
     return this.hrExt.importHrBackup(jsonText);
+  }
+
+  async sendInvoiceEmail(
+    payload: SendInvoiceEmailInput,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const to = normalizeEmail(payload.to);
+    if (!isValidEmail(to)) {
+      return { ok: false, error: 'Enter a valid recipient email address.' };
+    }
+    if (!payload.pdfBase64) {
+      return { ok: false, error: 'Invoice PDF could not be generated.' };
+    }
+
+    const smtp = this.smtpFromSettings();
+    if (!smtp) {
+      return {
+        ok: false,
+        error: 'Mail server is not configured. Set up SMTP in HR \u2192 Settings first.',
+      };
+    }
+
+    const { invoice } = payload;
+    const subject = `Invoice ${invoice.id} from STRATERA R&D Software Group`;
+    const noteHtml = payload.note?.trim()
+      ? `<p style="margin:16px 0 0;color:#334155"><strong>Note:</strong> ${escapeHtml(payload.note.trim())}</p>`
+      : '';
+    const messageHtml = payload.message?.trim()
+      ? `<p style="margin:0 0 16px;color:#334155">${escapeHtml(payload.message.trim())}</p>`
+      : `<p style="margin:0 0 16px;color:#334155">Dear ${escapeHtml(invoice.client)}, please find your invoice attached.</p>`;
+    const html = `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto">
+        <div style="background:#001B3A;color:#fff;padding:20px 24px;border-radius:8px 8px 0 0">
+          <h1 style="margin:0;font-size:18px">STRATERA</h1>
+          <p style="margin:4px 0 0;font-size:12px;opacity:.8">R&amp;D SOFTWARE GROUP</p>
+        </div>
+        <div style="border:1px solid #e2e8f0;border-top:none;padding:24px;border-radius:0 0 8px 8px">
+          <h2 style="margin:0 0 16px;color:#001B3A;font-size:16px">Invoice ${escapeHtml(invoice.id)}</h2>
+          ${messageHtml}
+          <table style="width:100%;font-size:14px;color:#334155;border-collapse:collapse">
+            <tr><td style="padding:4px 0">Issue Date</td><td style="text-align:right">${escapeHtml(invoice.date)}</td></tr>
+            <tr><td style="padding:4px 0">Due Date</td><td style="text-align:right">${escapeHtml(invoice.dueDate)}</td></tr>
+            <tr><td style="padding:4px 0">Status</td><td style="text-align:right">${escapeHtml(invoice.status)}</td></tr>
+          </table>
+          ${noteHtml}
+          <p style="margin:20px 0 0;color:#64748b;font-size:12px">The full invoice is attached as a PDF. Thank you for your business.</p>
+        </div>
+      </div>`;
+
+    const result = await sendInvoiceEmailMail(
+      to,
+      subject,
+      html,
+      payload.pdfBase64,
+      payload.filename || `STRATERA-Invoice-${invoice.id}.pdf`,
+      smtp,
+    );
+    return result.ok ? { ok: true } : { ok: false, error: result.error };
+  }
+
+  exportAccountingBackup(): string {
+    const tables = ['accounts', 'transactions', 'invoices'];
+    const data: Record<string, unknown[]> = {};
+    for (const table of tables) {
+      try {
+        data[table] = this.db.prepare(`SELECT * FROM ${table}`).all() as unknown[];
+      } catch {
+        data[table] = [];
+      }
+    }
+    return JSON.stringify(
+      { exportedAt: new Date().toISOString(), module: 'accounting', tables: data },
+      null,
+      2,
+    );
+  }
+
+  importAccountingBackup(jsonText: string): boolean {
+    try {
+      const parsed = JSON.parse(jsonText) as {
+        tables?: Record<string, Record<string, unknown>[]>;
+      };
+      if (!parsed.tables) return false;
+      const allowed = new Set(['accounts', 'transactions', 'invoices']);
+      this.db.beginBatch();
+      for (const [table, rows] of Object.entries(parsed.tables)) {
+        if (!allowed.has(table) || !rows.length) continue;
+        const cols = Object.keys(rows[0]);
+        const insert = this.db.prepare(sqlReplaceRow(this.db.engine, table, cols));
+        for (const row of rows) insert.run(...cols.map((c) => row[c]));
+      }
+      this.db.endBatch();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   getKioskCheckInConfig(baseUrl: string) {

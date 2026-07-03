@@ -282,9 +282,7 @@ export function Accounts() {
                       <td>
                         <div className="hr-table-actions flex-wrap">
                           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => openEdit(row)}>Edit</button>
-                          {!isProtectedAccount(row.name) && (
-                            <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => { setDeleteError(''); setDeleteTarget(row); }}>Delete</button>
-                          )}
+                          <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => { setDeleteError(''); setDeleteTarget(row); }}>Delete</button>
                         </div>
                       </td>
                     </tr>

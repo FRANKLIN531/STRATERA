@@ -18,6 +18,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      plugins: true,
     },
     show: false,
     backgroundColor: '#001B3A',

@@ -28,8 +28,20 @@ export { usePagination } from './hooks/usePagination';
 export { useTableSort } from './hooks/useTableSort';
 export type * from './api/types';
 export { createAccountingFallbackApi, createHrFallbackApi } from './api/fallback';
-export { exportInvoicePdf, exportPayrollPdf, exportFinancialReportPdf, exportEmployeeReportPdf, exportEmployeesDirectoryPdf } from './pdf';
-export type { EmployeeReportData } from './pdf';
+export {
+  exportInvoicePdf,
+  buildInvoicePdf,
+  invoicePdfFilename,
+  getInvoicePdfDataUri,
+  getInvoicePdfBase64,
+  exportPayrollPdf,
+  exportFinancialReportPdf,
+  buildFinancialReportPdf,
+  getFinancialReportPdfDataUri,
+  exportEmployeeReportPdf,
+  exportEmployeesDirectoryPdf,
+} from './pdf';
+export type { EmployeeReportData, InvoicePdfOptions } from './pdf';
 export { exportToCsv, downloadTextFile, readFileAsText, readFileAsBase64 } from './utils/csvExport';
 export { formatMoney, getActiveCurrency, getStoredCurrency, setActiveCurrency, resolveCurrencyCode, currencyLabel, HR_CURRENCY_OPTIONS, HR_CURRENCY_STORAGE_KEY, HR_CURRENCY_CHANGED_EVENT } from './utils/currency';
 export {

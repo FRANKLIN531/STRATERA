@@ -6,7 +6,7 @@ import type {
   Transaction,
   Invoice,
 } from '../api/types';
-import { addBrandedHeader, addFooter, formatMoney, savePdf } from './branding';
+import { addBrandedHeader, addFooter, formatMoney, savePdf, pdfDataUri } from './branding';
 
 interface ReportData {
   stats: AccountingDashboardStats;
@@ -15,32 +15,44 @@ interface ReportData {
   invoices: Invoice[];
 }
 
-export function exportFinancialReportPdf(reportName: string, data: ReportData): void {
+interface BuiltReport {
+  doc: jsPDF;
+  filename: string;
+}
+
+type FinalY = jsPDF & { lastAutoTable: { finalY: number } };
+
+/** Build (without saving) the requested financial report PDF. */
+export function buildFinancialReportPdf(reportName: string, data: ReportData): BuiltReport {
   switch (reportName) {
     case 'Profit & Loss Statement':
-      exportProfitLossPdf(data);
-      break;
+      return buildProfitLossPdf(data);
     case 'Balance Sheet':
-      exportBalanceSheetPdf(data);
-      break;
+      return buildBalanceSheetPdf(data);
     case 'Cash Flow Statement':
-      exportCashFlowPdf(data);
-      break;
+      return buildCashFlowPdf(data);
     case 'Accounts Aging Report':
-      exportAgingPdf(data);
-      break;
+      return buildAgingPdf(data);
     case 'Expense Breakdown':
-      exportExpenseBreakdownPdf(data);
-      break;
+      return buildExpenseBreakdownPdf(data);
     case 'Tax Summary Report':
-      exportTaxSummaryPdf(data);
-      break;
+      return buildTaxSummaryPdf(data);
     default:
-      exportProfitLossPdf(data);
+      return buildProfitLossPdf(data);
   }
 }
 
-function exportProfitLossPdf(data: ReportData): void {
+export function exportFinancialReportPdf(reportName: string, data: ReportData): void {
+  const { doc, filename } = buildFinancialReportPdf(reportName, data);
+  savePdf(doc, filename);
+}
+
+/** `data:` URI for previewing a financial report in an iframe. */
+export function getFinancialReportPdfDataUri(reportName: string, data: ReportData): string {
+  return pdfDataUri(buildFinancialReportPdf(reportName, data).doc);
+}
+
+function buildProfitLossPdf(data: ReportData): BuiltReport {
   const doc = new jsPDF();
   const startY = addBrandedHeader(doc, 'Profit & Loss Statement', 'Monthly Summary');
 
@@ -59,7 +71,7 @@ function exportProfitLossPdf(data: ReportData): void {
   const recentIncome = data.transactions.filter((t) => t.type === 'Income').slice(0, 8);
   if (recentIncome.length > 0) {
     autoTable(doc, {
-      startY: (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 14,
+      startY: (doc as FinalY).lastAutoTable.finalY + 14,
       head: [['Date', 'Description', 'Amount']],
       body: recentIncome.map((t) => [t.date, t.description, formatMoney(t.amount)]),
       headStyles: { fillColor: [71, 85, 105] },
@@ -68,10 +80,10 @@ function exportProfitLossPdf(data: ReportData): void {
   }
 
   addFooter(doc);
-  savePdf(doc, 'STRATERA-Profit-Loss.pdf');
+  return { doc, filename: 'STRATERA-Profit-Loss.pdf' };
 }
 
-function exportBalanceSheetPdf(data: ReportData): void {
+function buildBalanceSheetPdf(data: ReportData): BuiltReport {
   const doc = new jsPDF();
   const startY = addBrandedHeader(doc, 'Balance Sheet', `As of ${new Date().toLocaleDateString()}`);
 
@@ -94,7 +106,7 @@ function exportBalanceSheetPdf(data: ReportData): void {
   });
 
   autoTable(doc, {
-    startY: (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10,
+    startY: (doc as FinalY).lastAutoTable.finalY + 10,
     head: [['Liabilities', 'Balance']],
     body: liabilities.map((a) => [a.name, formatMoney(a.balance)]),
     foot: [['Total Liabilities', formatMoney(totalLiabilities)]],
@@ -103,7 +115,7 @@ function exportBalanceSheetPdf(data: ReportData): void {
   });
 
   autoTable(doc, {
-    startY: (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10,
+    startY: (doc as FinalY).lastAutoTable.finalY + 10,
     head: [['Equity Summary', 'Amount']],
     body: [
       ['Revenue (YTD)', formatMoney(income.reduce((s, a) => s + a.balance, 0))],
@@ -114,10 +126,10 @@ function exportBalanceSheetPdf(data: ReportData): void {
   });
 
   addFooter(doc);
-  savePdf(doc, 'STRATERA-Balance-Sheet.pdf');
+  return { doc, filename: 'STRATERA-Balance-Sheet.pdf' };
 }
 
-function exportCashFlowPdf(data: ReportData): void {
+function buildCashFlowPdf(data: ReportData): BuiltReport {
   const doc = new jsPDF();
   const startY = addBrandedHeader(doc, 'Cash Flow Statement', 'Monthly');
 
@@ -135,7 +147,7 @@ function exportCashFlowPdf(data: ReportData): void {
   });
 
   autoTable(doc, {
-    startY: (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10,
+    startY: (doc as FinalY).lastAutoTable.finalY + 10,
     head: [['Cash Outflows', 'Amount']],
     body: outflows.slice(0, 10).map((t) => [t.description, formatMoney(Math.abs(t.amount))]),
     foot: [['Total Outflows', formatMoney(totalOut)]],
@@ -144,14 +156,14 @@ function exportCashFlowPdf(data: ReportData): void {
 
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  const netY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 18;
+  const netY = (doc as FinalY).lastAutoTable.finalY + 18;
   doc.text(`Net Cash Flow: ${formatMoney(totalIn - totalOut)}`, 14, netY);
 
   addFooter(doc);
-  savePdf(doc, 'STRATERA-Cash-Flow.pdf');
+  return { doc, filename: 'STRATERA-Cash-Flow.pdf' };
 }
 
-function exportAgingPdf(data: ReportData): void {
+function buildAgingPdf(data: ReportData): BuiltReport {
   const doc = new jsPDF();
   const startY = addBrandedHeader(doc, 'Accounts Aging Report', 'Outstanding receivables');
 
@@ -185,10 +197,10 @@ function exportAgingPdf(data: ReportData): void {
   });
 
   addFooter(doc);
-  savePdf(doc, 'STRATERA-Accounts-Aging.pdf');
+  return { doc, filename: 'STRATERA-Accounts-Aging.pdf' };
 }
 
-function exportExpenseBreakdownPdf(data: ReportData): void {
+function buildExpenseBreakdownPdf(data: ReportData): BuiltReport {
   const doc = new jsPDF();
   const startY = addBrandedHeader(doc, 'Expense Breakdown', 'By account');
 
@@ -207,10 +219,10 @@ function exportExpenseBreakdownPdf(data: ReportData): void {
   });
 
   addFooter(doc);
-  savePdf(doc, 'STRATERA-Expense-Breakdown.pdf');
+  return { doc, filename: 'STRATERA-Expense-Breakdown.pdf' };
 }
 
-function exportTaxSummaryPdf(data: ReportData): void {
+function buildTaxSummaryPdf(data: ReportData): BuiltReport {
   const doc = new jsPDF();
   const startY = addBrandedHeader(doc, 'Tax Summary Report', 'Quarterly estimate');
 
@@ -234,8 +246,8 @@ function exportTaxSummaryPdf(data: ReportData): void {
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
   doc.text('Tax estimates are illustrative. Consult your accountant for official filings.', 14,
-    (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 14);
+    (doc as FinalY).lastAutoTable.finalY + 14);
 
   addFooter(doc);
-  savePdf(doc, 'STRATERA-Tax-Summary.pdf');
+  return { doc, filename: 'STRATERA-Tax-Summary.pdf' };
 }

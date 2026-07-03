@@ -105,6 +105,9 @@ export function registerAllIpcHandlers(ipcMain: IpcMain, db: StrateraDatabase): 
     shell.openExternal(`mailto:?subject=${subject}&body=${body}`);
     return true;
   });
+  ipcMain.handle('accounting:sendInvoiceEmail', (_e, payload) => db.sendInvoiceEmail(payload));
+  ipcMain.handle('accounting:exportBackup', () => db.exportAccountingBackup());
+  ipcMain.handle('accounting:importBackup', (_e, json) => db.importAccountingBackup(json));
 
   ipcMain.handle('hr:getDashboardStats', () => db.getHrDashboardStats());
   ipcMain.handle('hr:getEmployees', () => db.getEmployees());

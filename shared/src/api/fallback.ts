@@ -841,6 +841,40 @@ export function createAccountingFallbackApi(): AccountingApi {
       window.open(`mailto:?subject=${subject}&body=${body}`);
       return true;
     },
+    sendInvoiceEmail: async () => ({
+      ok: false,
+      error: 'Email sending is only available in the STRATERA desktop app.',
+    }),
+    exportAccountingBackup: async () =>
+      JSON.stringify(
+        {
+          exportedAt: new Date().toISOString(),
+          module: 'accounting',
+          tables: { accounts, transactions, invoices },
+        },
+        null,
+        2,
+      ),
+    importAccountingBackup: async (jsonText: string) => {
+      try {
+        const parsed = JSON.parse(jsonText) as {
+          tables?: { accounts?: Account[]; transactions?: Transaction[]; invoices?: Invoice[] };
+        };
+        if (!parsed.tables) return false;
+        if (parsed.tables.accounts) {
+          accounts.splice(0, accounts.length, ...parsed.tables.accounts);
+        }
+        if (parsed.tables.transactions) {
+          transactions.splice(0, transactions.length, ...parsed.tables.transactions);
+        }
+        if (parsed.tables.invoices) {
+          invoices.splice(0, invoices.length, ...parsed.tables.invoices);
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    },
   };
 }
 

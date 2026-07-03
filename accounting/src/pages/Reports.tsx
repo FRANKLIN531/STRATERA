@@ -1,8 +1,13 @@
-import { Button, LoadingSpinner, useAsyncData, exportFinancialReportPdf } from '@stratera/shared';
+import { useState } from 'react';
+import {
+  Button, LoadingSpinner, useAsyncData,
+  exportFinancialReportPdf, getFinancialReportPdfDataUri,
+} from '@stratera/shared';
 import { Icons } from '@stratera/shared';
 import { getAccountingApi } from '../api';
 import { MetricCard } from '../components/MetricCard';
 import { SectionHeader } from '../components/SectionHeader';
+import { PdfPreviewModal } from '../components/PdfPreviewModal';
 import { formatCurrency } from '../utils/format';
 
 const api = getAccountingApi();
@@ -23,10 +28,20 @@ export function Reports() {
   const { data: invoices, loading: invLoading } = useAsyncData(() => api.getInvoices());
 
   const loading = statsLoading || accountsLoading || txnLoading || invLoading;
+  const [previewReport, setPreviewReport] = useState<string | null>(null);
+
+  const reportData = stats && accounts && transactions && invoices
+    ? { stats, accounts, transactions, invoices }
+    : null;
+
+  const handlePreview = (reportName: string) => {
+    if (!reportData) return;
+    setPreviewReport(reportName);
+  };
 
   const handleExport = (reportName: string) => {
-    if (!stats || !accounts || !transactions || !invoices) return;
-    exportFinancialReportPdf(reportName, { stats, accounts, transactions, invoices });
+    if (!reportData) return;
+    exportFinancialReportPdf(reportName, reportData);
   };
 
   if (loading) return <LoadingSpinner />;
@@ -93,8 +108,8 @@ export function Reports() {
                 <p className="acc-report-card__desc">{report.description}</p>
                 <div className="acc-report-card__footer">
                   <span className="acc-report-card__period">{report.period}</span>
-                  <Button size="sm" variant="outline" onClick={() => handleExport(report.name)}>
-                    Export PDF
+                  <Button size="sm" variant="outline" onClick={() => handlePreview(report.name)}>
+                    Preview & Export
                   </Button>
                 </div>
               </article>
@@ -102,6 +117,19 @@ export function Reports() {
           </div>
         </div>
       </div>
+
+      {previewReport && reportData && (
+        <PdfPreviewModal
+          title={previewReport}
+          subtitle="Review the report before saving the PDF"
+          dataUri={getFinancialReportPdfDataUri(previewReport, reportData)}
+          onClose={() => setPreviewReport(null)}
+          onDownload={() => {
+            handleExport(previewReport);
+            setPreviewReport(null);
+          }}
+        />
+      )}
     </div>
   );
 }

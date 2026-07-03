@@ -1,11 +1,25 @@
 import type { jsPDF } from 'jspdf';
 
-import { formatMoney as formatMoneyUtil, getActiveCurrency } from '../utils/currency';
+import { getActiveCurrency } from '../utils/currency';
 
 export const PDF_NAVY: [number, number, number] = [0, 27, 58];
 
+/**
+ * ASCII-safe money formatting for PDFs.
+ *
+ * jsPDF's built-in Helvetica font uses WinAnsi encoding and cannot render
+ * currency glyphs like the Ghana cedi (₵) or naira (₦), which produced garbled
+ * output (e.g. "&G&H μ4&,&9..."). We use the ISO currency code plus a plain
+ * grouped number so every currency renders cleanly.
+ */
 export function formatMoney(amount: number, currency?: string): string {
-  return formatMoneyUtil(amount, currency ?? getActiveCurrency());
+  const code = (currency ?? getActiveCurrency() ?? 'USD').toUpperCase();
+  const value = Number.isFinite(amount) ? amount : 0;
+  const grouped = value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${code} ${grouped}`;
 }
 
 export function addBrandedHeader(doc: jsPDF, title: string, subtitle?: string): number {
@@ -59,4 +73,16 @@ export function addFooter(doc: jsPDF): void {
 
 export function savePdf(doc: jsPDF, filename: string): void {
   doc.save(filename);
+}
+
+/** Returns a `data:` URI suitable for an <iframe> preview. */
+export function pdfDataUri(doc: jsPDF): string {
+  return doc.output('datauristring');
+}
+
+/** Returns the raw base64 payload (no `data:` prefix) for email attachments. */
+export function pdfBase64(doc: jsPDF): string {
+  const uri = doc.output('datauristring');
+  const comma = uri.indexOf(',');
+  return comma >= 0 ? uri.slice(comma + 1) : uri;
 }

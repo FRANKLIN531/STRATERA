@@ -37,6 +37,9 @@ const accountingApi = {
   updateInvoice: (id: string, input: unknown) => ipcRenderer.invoke('accounting:updateInvoice', id, input),
   deleteInvoice: (id: string) => ipcRenderer.invoke('accounting:deleteInvoice', id),
   emailInvoice: (invoice: unknown) => ipcRenderer.invoke('accounting:emailInvoice', invoice),
+  sendInvoiceEmail: (payload: unknown) => ipcRenderer.invoke('accounting:sendInvoiceEmail', payload),
+  exportAccountingBackup: () => ipcRenderer.invoke('accounting:exportBackup'),
+  importAccountingBackup: (json: string) => ipcRenderer.invoke('accounting:importBackup', json),
 };
 
 contextBridge.exposeInMainWorld('stratera', {

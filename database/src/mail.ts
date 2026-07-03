@@ -155,6 +155,52 @@ export async function sendPasswordResetEmail(
   );
 }
 
+export async function sendInvoiceEmail(
+  to: string,
+  subject: string,
+  html: string,
+  pdfBase64: string,
+  filename: string,
+  smtp: SmtpConfig,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const check = isSmtpConfigComplete(smtp);
+  if (!check.ok) return check;
+
+  const host = smtp.host.trim().toLowerCase();
+  const isGmail = host.includes('gmail');
+  const ports = isGmail ? [587, 465] : [Number(smtp.port) || 587];
+  const attachments = [
+    {
+      filename: filename || 'invoice.pdf',
+      content: Buffer.from(pdfBase64, 'base64'),
+      contentType: 'application/pdf',
+    },
+  ];
+
+  let lastErr: unknown;
+  for (const port of ports) {
+    const transporter = createSmtpTransport(smtp, port);
+    try {
+      await transporter.sendMail({
+        from: { name: 'STRATERA Accounting', address: smtp.from.trim() },
+        to,
+        subject,
+        html,
+        attachments,
+        headers: { 'X-Mailer': 'STRATERA Accounting' },
+      });
+      transporter.close();
+      return { ok: true };
+    } catch (err) {
+      lastErr = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!isRetryableSmtpError(msg) || port === ports[ports.length - 1]) break;
+    }
+  }
+
+  return { ok: false, error: smtpErrorMessage(lastErr, 'employee') };
+}
+
 export async function sendEmployeeMessageEmail(
   to: string,
   employeeName: string,
