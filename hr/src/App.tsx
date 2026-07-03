@@ -114,8 +114,9 @@ export default function App() {
         <SignUpScreen
           appTitle="STRATERA HR"
           appSubtitle="R&D SOFTWARE GROUP"
+          moduleLabel="HR desktop"
           verificationEnabled={signUpVerificationEnabled}
-          onSignUpStart={(input) => authApi.signUpStart(input)}
+          onSignUpStart={(input) => authApi.signUpStart({ ...input, appAccess: 'hr' })}
           onSignUpComplete={(email, code) => authApi.signUpComplete(email, code)}
           onBack={() => setAuthScreen('login')}
           onSuccess={() => setAuthScreen('login')}

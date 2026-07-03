@@ -98,8 +98,9 @@ export default function App() {
         <SignUpScreen
           appTitle="STRATERA Accounting"
           appSubtitle="R&D SOFTWARE GROUP"
+          moduleLabel="Accounting desktop"
           verificationEnabled={signUpVerificationEnabled}
-          onSignUpStart={(input) => api.signUpStart(input)}
+          onSignUpStart={(input) => api.signUpStart({ ...input, appAccess: 'accounting' })}
           onSignUpComplete={(email, code) => api.signUpComplete(email, code)}
           onBack={() => setAuthScreen('login')}
           onSuccess={() => setAuthScreen('login')}

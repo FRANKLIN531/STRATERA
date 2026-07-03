@@ -127,8 +127,8 @@ export function SignUpScreen({
             : step === 'done'
               ? 'Your account is ready. Sign in with the email and password you just created.'
               : moduleLabel
-                ? `Create a STRATERA account for ${moduleLabel}. Use a real Gmail address you can access.`
-                : 'Use your name, a valid Gmail address, and a password you will remember.'}
+                ? `Create a STRATERA account to use the ${moduleLabel}. Use a real Gmail address you can access. This account only works on this desktop.`
+                : 'Create a STRATERA account to use this desktop. Use a real Gmail address you can access.'}
         </p>
       </div>
 

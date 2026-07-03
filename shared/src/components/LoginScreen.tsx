@@ -154,40 +154,43 @@ export function LoginScreen({
             </Button>
           </form>
 
-          {!initialSetupPending && onForgotPassword && (
-            <div style={{ textAlign: 'center', marginTop: 20 }}>
-              <button
-                type="button"
-                onClick={onForgotPassword}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: strateraTheme.colors.navy,
-                  fontSize: 13,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                }}
-              >
-                Forgot password?
-              </button>
+          {!initialSetupPending && (onForgotPassword || onSignUp) && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                marginTop: 20,
+              }}
+            >
+              {onForgotPassword ? (
+                <button type="button" onClick={onForgotPassword} style={linkButtonStyle}>
+                  Forgot password?
+                </button>
+              ) : (
+                <span />
+              )}
+              {onSignUp ? (
+                <button
+                  type="button"
+                  onClick={onSignUp}
+                  style={{ ...linkButtonStyle, fontWeight: 600 }}
+                >
+                  Create an account
+                </button>
+              ) : (
+                <span />
+              )}
             </div>
           )}
 
-          {onSignUp && (
-            <div style={{ textAlign: 'center', marginTop: initialSetupPending ? 20 : 12 }}>
+          {initialSetupPending && onSignUp && (
+            <div style={{ textAlign: 'center', marginTop: 20 }}>
               <button
                 type="button"
                 onClick={onSignUp}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: strateraTheme.colors.navy,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                }}
+                style={{ ...linkButtonStyle, fontWeight: 600 }}
               >
                 Create an account
               </button>
@@ -221,4 +224,15 @@ const inputStyle: CSSProperties = {
   color: strateraTheme.colors.gray700,
   background: strateraTheme.colors.gray50,
   transition: 'border-color 0.15s, box-shadow 0.15s',
+};
+
+const linkButtonStyle: CSSProperties = {
+  background: 'none',
+  border: 'none',
+  color: strateraTheme.colors.navy,
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: 'pointer',
+  textDecoration: 'underline',
+  padding: 0,
 };

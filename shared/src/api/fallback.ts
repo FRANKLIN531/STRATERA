@@ -488,14 +488,29 @@ function authApi(requiredApp: 'accounting' | 'hr'): Pick<
       if (input.password === 'admin123') {
         return { ok: false as const, error: 'Choose a personal password — the default demo password cannot be used.' };
       }
-      if (DEMO_USERS[normalized]) {
-        return { ok: false as const, error: 'An account with this email already exists. Sign in instead.' };
+      const appAccess = input.appAccess ?? 'both';
+
+      const existingUser = DEMO_USERS[normalized];
+      if (existingUser) {
+        if (existingUser.password !== input.password) {
+          return { ok: false as const, error: 'An account with this email already exists. Sign in instead.' };
+        }
+        const current = existingUser.user.appAccess;
+        const merged: 'both' | 'accounting' | 'hr' =
+          current === 'both' || appAccess === 'both' || current !== appAccess ? 'both' : current;
+        if (merged === current) {
+          return { ok: false as const, error: 'You already have an account for this desktop. Just sign in.' };
+        }
+        const updated = { ...existingUser, user: { ...existingUser.user, appAccess: merged } };
+        DEMO_USERS[normalized] = updated;
+        storeDemoUser(normalized, updated);
+        return { ok: true as const, needsVerification: false };
       }
+
       if (window.stratera?.isElectron) {
         return { ok: false as const, error: 'Database not connected. Restart STRATERA.' };
       }
 
-      const appAccess = input.appAccess ?? 'both';
       const pending = { name, email: normalized, password: input.password, appAccess };
       const smtp = readStoredSmtp();
 

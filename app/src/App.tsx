@@ -113,9 +113,11 @@ export default function App() {
         variant="portal"
         appTitle={labels.title}
         appSubtitle="Create your STRATERA account"
-        moduleLabel={labels.subtitle}
+        moduleLabel={labels.title}
         verificationEnabled={signUpVerificationEnabled}
-        onSignUpStart={(input) => auth.signUpStart(input)}
+        onSignUpStart={(input) =>
+          auth.signUpStart({ ...input, appAccess: module === 'hr' ? 'hr' : 'accounting' })
+        }
         onSignUpComplete={(email, code) => auth.signUpComplete(email, code)}
         onBack={() => setScreen('login')}
         onSuccess={() => setScreen('login')}

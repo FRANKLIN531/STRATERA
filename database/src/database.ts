@@ -59,6 +59,15 @@ import type {
   SignUpInput,
 } from './types';
 
+type AppAccess = 'both' | 'accounting' | 'hr';
+
+/** Combine an existing account's access with a newly requested desktop. */
+function mergeAppAccess(current: string, requested: AppAccess): AppAccess {
+  if (current === 'both' || requested === 'both') return 'both';
+  if (current === requested) return current as AppAccess;
+  return 'both';
+}
+
 export class StrateraDatabase {
   private db: DbClient;
   private currentUser: User | null = null;
@@ -585,6 +594,25 @@ export class StrateraDatabase {
     }
 
     const appAccess = input.appAccess ?? 'both';
+
+    // If an account already exists for this email, allow the same person (matching
+    // password) to activate the other desktop — but never let a single-desktop
+    // account cross over without signing up for that desktop explicitly.
+    const existing = this.db
+      .prepare('SELECT id, password_hash, app_access FROM users WHERE email = ?')
+      .get(normalized) as { id: string; password_hash: string; app_access: string } | undefined;
+    if (existing) {
+      if (existing.password_hash !== hashPassword(input.password)) {
+        return { ok: false, error: 'An account with this email already exists. Sign in instead.' };
+      }
+      const merged = mergeAppAccess(existing.app_access, appAccess);
+      if (merged === existing.app_access) {
+        return { ok: false, error: 'You already have an account for this desktop. Just sign in.' };
+      }
+      this.db.prepare('UPDATE users SET app_access = ? WHERE id = ?').run(merged, existing.id);
+      return { ok: true, needsVerification: false };
+    }
+
     const pendingInput = {
       name: input.name.trim(),
       email: normalized,
