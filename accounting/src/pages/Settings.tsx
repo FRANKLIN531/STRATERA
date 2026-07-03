@@ -87,6 +87,15 @@ export function Settings() {
     flashSaved(`Fiscal year start set to ${month}.`);
   };
 
+  const handleCompanyChange = (value: string) => {
+    setCompanyName(value);
+    try {
+      localStorage.setItem(COMPANY_NAME_KEY, value.trim() || 'STRATERA R&D Software Group');
+    } catch {
+      /* ignore */
+    }
+  };
+
   const handleCompanyBlur = () => {
     const name = companyName.trim() || 'STRATERA R&D Software Group';
     setCompanyName(name);
@@ -160,7 +169,7 @@ export function Settings() {
                     type="text"
                     className="form-control"
                     value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
+                    onChange={(e) => handleCompanyChange(e.target.value)}
                     onBlur={handleCompanyBlur}
                   />
                 </div>

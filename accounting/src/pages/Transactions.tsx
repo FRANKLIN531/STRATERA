@@ -284,7 +284,7 @@ export function Transactions() {
                       </td>
                       <td>
                         {!isPayroll(row) ? (
-                          <div className="hr-table-actions flex-wrap">
+                          <div className="hr-table-actions">
                             <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => openEdit(row)}>Edit</button>
                             <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setDeleteId(row.id)}>Delete</button>
                           </div>

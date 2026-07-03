@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   getInvoicePdfDataUri,
   getInvoicePdfBase64,
@@ -27,8 +27,19 @@ export function InvoicePreviewModal({ invoice, initialMode = 'preview', onClose 
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [emailOpen, setEmailOpen] = useState(initialMode === 'email');
 
+  // Only rebuild the (expensive) PDF preview after typing pauses, so the
+  // embedded viewer doesn't flash/reload on every keystroke.
+  const [previewDescription, setPreviewDescription] = useState(description);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setPreviewDescription(description), 450);
+    return () => window.clearTimeout(timer);
+  }, [description]);
+
   const pdfOptions = useMemo(() => ({ description }), [description]);
-  const dataUri = useMemo(() => getInvoicePdfDataUri(invoice, pdfOptions), [invoice, pdfOptions]);
+  const dataUri = useMemo(
+    () => getInvoicePdfDataUri(invoice, { description: previewDescription }),
+    [invoice, previewDescription],
+  );
 
   const handleDownload = () => exportInvoicePdf(invoice, pdfOptions);
 

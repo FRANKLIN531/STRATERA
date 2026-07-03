@@ -253,7 +253,7 @@ export function Invoices() {
                       <td><span className="acc-amount-neutral">{formatCurrency(row.amount)}</span></td>
                       <td><Badge variant={statusVariant(row.status)}>{row.status}</Badge></td>
                       <td>
-                        <div className="hr-table-actions flex-wrap">
+                        <div className="hr-table-actions">
                           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => openEdit(row)}>Edit</button>
                           <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setDeleteId(row.id)}>Delete</button>
                           <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setPreview({ invoice: row, mode: 'email' })}>Email</button>
