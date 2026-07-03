@@ -3,8 +3,8 @@ import type { Invoice } from '../api/types';
 import { addBrandedHeader, addFooter, formatMoney, savePdf, pdfDataUri, pdfBase64 } from './branding';
 
 export interface InvoicePdfOptions {
-  /** Optional free-text note printed under the line items. */
-  note?: string;
+  /** Line-item description shown on the invoice. Defaults to "Professional services". */
+  description?: string;
   /** Currency override; defaults to the active accounting currency. */
   currency?: string;
 }
@@ -33,29 +33,19 @@ export function buildInvoicePdf(invoice: Invoice, options: InvoicePdfOptions = {
   doc.text('Amount', 160, startY + 44);
 
   doc.setFont('helvetica', 'normal');
-  doc.text('Professional services', 14, startY + 56);
+  doc.setFontSize(11);
+  const description = options.description?.trim() || 'Professional services';
+  const descLines = doc.splitTextToSize(description, 130);
+  doc.text(descLines, 14, startY + 56);
   doc.text(formatMoney(invoice.amount, options.currency), 160, startY + 56);
 
+  const descHeight = Math.max(1, descLines.length) * 6;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text(`Total Due: ${formatMoney(invoice.amount, options.currency)}`, 14, startY + 76);
+  const totalY = startY + 56 + descHeight + 14;
+  doc.text(`Total Due: ${formatMoney(invoice.amount, options.currency)}`, 14, totalY);
 
-  let cursorY = startY + 90;
-  const note = options.note?.trim();
-  if (note) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-    doc.text('Notes', 14, cursorY);
-    cursorY += 6;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(60, 72, 88);
-    const wrapped = doc.splitTextToSize(note, 182);
-    doc.text(wrapped, 14, cursorY);
-    cursorY += wrapped.length * 5 + 8;
-  }
-
+  const cursorY = totalY + 14;
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);

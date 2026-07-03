@@ -20,16 +20,17 @@ interface InvoicePreviewModalProps {
 const labelStyle = { fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 4 } as const;
 
 export function InvoicePreviewModal({ invoice, initialMode = 'preview', onClose }: InvoicePreviewModalProps) {
-  const [note, setNote] = useState('');
+  const [description, setDescription] = useState('');
   const [recipient, setRecipient] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [emailOpen, setEmailOpen] = useState(initialMode === 'email');
 
-  const dataUri = useMemo(() => getInvoicePdfDataUri(invoice, { note }), [invoice, note]);
+  const pdfOptions = useMemo(() => ({ description }), [description]);
+  const dataUri = useMemo(() => getInvoicePdfDataUri(invoice, pdfOptions), [invoice, pdfOptions]);
 
-  const handleDownload = () => exportInvoicePdf(invoice, { note });
+  const handleDownload = () => exportInvoicePdf(invoice, pdfOptions);
 
   const handleSend = async () => {
     setResult(null);
@@ -42,9 +43,9 @@ export function InvoicePreviewModal({ invoice, initialMode = 'preview', onClose 
       const res = await api.sendInvoiceEmail({
         invoice,
         to: recipient.trim(),
-        pdfBase64: getInvoicePdfBase64(invoice, { note }),
+        pdfBase64: getInvoicePdfBase64(invoice, pdfOptions),
         filename: invoicePdfFilename(invoice),
-        note,
+        note: description,
         message,
       });
       setResult(
@@ -53,7 +54,14 @@ export function InvoicePreviewModal({ invoice, initialMode = 'preview', onClose 
           : { ok: false, text: res.error ?? 'Could not send the invoice email.' },
       );
     } catch (err) {
-      setResult({ ok: false, text: err instanceof Error ? err.message : 'Could not send the invoice email.' });
+      const raw = err instanceof Error ? err.message : String(err);
+      const stale = /no handler|not a function/i.test(raw);
+      setResult({
+        ok: false,
+        text: stale
+          ? 'Email service not loaded. Fully close and reopen STRATERA, then try again.'
+          : raw || 'Could not send the invoice email.',
+      });
     } finally {
       setSending(false);
     }
@@ -69,15 +77,15 @@ export function InvoicePreviewModal({ invoice, initialMode = 'preview', onClose 
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
-          <div style={labelStyle}>Note on invoice (optional)</div>
+          <div style={labelStyle}>Description</div>
           <textarea
             className="form-control form-control-sm"
-            rows={4}
-            placeholder="Add a note, payment terms, or a thank-you message..."
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
+            rows={3}
+            placeholder="Professional services"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           />
-          <p className="small text-muted mt-1 mb-0">This text is added to the PDF above.</p>
+          <p className="small text-muted mt-1 mb-0">Shown as the line item on the invoice above.</p>
         </div>
 
         <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 16 }}>
@@ -91,6 +99,14 @@ export function InvoicePreviewModal({ invoice, initialMode = 'preview', onClose 
             </button>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {result && (
+                <div
+                  className={`alert ${result.ok ? 'alert-success' : 'alert-danger'} py-2 px-3 mb-0`}
+                  role="status"
+                >
+                  <span className="small">{result.text}</span>
+                </div>
+              )}
               <div>
                 <div style={labelStyle}>Recipient email</div>
                 <input
@@ -117,20 +133,11 @@ export function InvoicePreviewModal({ invoice, initialMode = 'preview', onClose 
                 onClick={handleSend}
                 disabled={sending}
               >
-                {sending ? 'Sending...' : 'Send invoice PDF'}
+                {sending ? 'Sending…' : 'Send invoice PDF'}
               </button>
               <p className="small text-muted mb-0">
                 The PDF above is attached and emailed using your STRATERA mail settings.
               </p>
-            </div>
-          )}
-
-          {result && (
-            <div
-              className={`alert ${result.ok ? 'alert-success' : 'alert-danger'} py-2 px-3 mt-3 mb-0`}
-              role="status"
-            >
-              <span className="small">{result.text}</span>
             </div>
           )}
         </div>

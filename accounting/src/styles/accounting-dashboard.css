@@ -601,6 +601,12 @@
   vertical-align: middle;
 }
 
+/* Keep every row on a single line so columns stay aligned. */
+.hr-directory-table thead th,
+.hr-directory-table tbody td {
+  white-space: nowrap;
+}
+
 .hr-directory-table th:nth-child(7),
 .hr-directory-table td:nth-child(7) {
   min-width: 96px;
