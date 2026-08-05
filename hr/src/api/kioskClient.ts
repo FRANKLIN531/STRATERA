@@ -53,6 +53,19 @@ async function canReachKioskHttp(): Promise<boolean> {
   }
 }
 
+function offlineAttendanceError(): CheckInLookupResult {
+  return {
+    ok: false,
+    error:
+      'Cannot reach the STRATERA attendance service. Keep the STRATERA desktop app open on the office computer, then try again.',
+  };
+}
+
+function isMissingHandlerError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /No handler registered|Error invoking remote method|is not a function/i.test(msg);
+}
+
 /** Prefer Electron DB; on phone browsers use local kiosk HTTP API (port 5192). */
 export async function getKioskCheckInConfig(baseUrl: string): Promise<KioskCheckInConfig> {
   const hr = nativeHr();
@@ -79,11 +92,12 @@ export async function getKioskCheckInConfig(baseUrl: string): Promise<KioskCheck
 
 export async function lookupCheckIn(input: CheckInLookupInput): Promise<CheckInLookupResult> {
   const hr = nativeHr();
-  if (isElectron() && typeof hr?.lookupCheckIn === 'function' && !isDemoKioskToken(input.siteToken)) {
+  // Always prefer the live desktop database when running inside Electron.
+  if (isElectron() && typeof hr?.lookupCheckIn === 'function') {
     try {
       return await hr.lookupCheckIn(input);
-    } catch {
-      /* HTTP fallback */
+    } catch (err) {
+      if (!isMissingHandlerError(err)) throw err;
     }
   }
 
@@ -94,16 +108,21 @@ export async function lookupCheckIn(input: CheckInLookupInput): Promise<CheckInL
     });
   }
 
+  // Real QR tokens must talk to the office desktop — never an empty in-memory demo list.
+  if (!isDemoKioskToken(input.siteToken)) {
+    return offlineAttendanceError();
+  }
+
   return getHrApi().lookupCheckIn(input);
 }
 
 export async function confirmCheckIn(input: CheckInConfirmInput): Promise<CheckInConfirmResult> {
   const hr = nativeHr();
-  if (isElectron() && typeof hr?.confirmCheckIn === 'function' && !isDemoKioskToken(input.siteToken)) {
+  if (isElectron() && typeof hr?.confirmCheckIn === 'function') {
     try {
       return await hr.confirmCheckIn(input);
-    } catch {
-      /* HTTP fallback */
+    } catch (err) {
+      if (!isMissingHandlerError(err)) throw err;
     }
   }
 
@@ -112,6 +131,14 @@ export async function confirmCheckIn(input: CheckInConfirmInput): Promise<CheckI
       method: 'POST',
       body: JSON.stringify(input),
     });
+  }
+
+  if (!isDemoKioskToken(input.siteToken)) {
+    return {
+      ok: false,
+      error:
+        'Cannot reach the STRATERA attendance service. Keep the STRATERA desktop app open on the office computer, then try again.',
+    };
   }
 
   return getHrApi().confirmCheckIn(input);

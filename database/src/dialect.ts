@@ -8,7 +8,8 @@ function quoteColumn(engine: DbEngine, column: string): string {
 }
 
 export function hasColumn(db: DbClient, table: string, column: string): boolean {
-  return db.getTableColumns(table).some((c) => c.name === column);
+  const target = column.toLowerCase();
+  return db.getTableColumns(table).some((c) => c.name.toLowerCase() === target);
 }
 
 export function addColumnIfMissing(

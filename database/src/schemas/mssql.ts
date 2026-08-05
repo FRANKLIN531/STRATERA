@@ -48,8 +48,11 @@ CREATE TABLE employees (
   department NVARCHAR(128) NOT NULL,
   role NVARCHAR(128) NOT NULL,
   email NVARCHAR(255) NOT NULL,
+  phone NVARCHAR(64) NOT NULL DEFAULT '',
   status NVARCHAR(32) NOT NULL DEFAULT 'Active',
-  join_date NVARCHAR(32) NOT NULL
+  join_date NVARCHAR(32) NOT NULL,
+  salary DECIMAL(18, 2) NOT NULL DEFAULT 0,
+  position_id NVARCHAR(64) NULL
 );
 
 IF OBJECT_ID(N'payroll', N'U') IS NULL

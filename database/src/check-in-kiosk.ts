@@ -1,5 +1,12 @@
 import { normalizeEmail } from './validation';
 
+/** Read a column from a DB row with case-insensitive key matching (MSSQL drivers vary). */
+export function rowField(row: Record<string, unknown>, key: string): unknown {
+  if (Object.prototype.hasOwnProperty.call(row, key)) return row[key];
+  const found = Object.keys(row).find((k) => k.toLowerCase() === key.toLowerCase());
+  return found ? row[found] : undefined;
+}
+
 /** Normalize phone to comparable digits (Ghana +233 / 0-prefix friendly). */
 export function phoneDigits(phone: string): string {
   let d = phone.replace(/\D/g, '');
@@ -27,7 +34,7 @@ export function matchEmployeeByPhone(
 ): Record<string, unknown> | undefined {
   const entered = phone.trim();
   if (!entered) return undefined;
-  return rows.find((row) => phonesMatch(String(row.phone ?? ''), entered));
+  return rows.find((row) => phonesMatch(String(rowField(row, 'phone') ?? ''), entered));
 }
 
 export function matchEmployeeByEmail(
@@ -36,5 +43,5 @@ export function matchEmployeeByEmail(
 ): Record<string, unknown> | undefined {
   const normalized = normalizeEmail(email);
   if (!normalized) return undefined;
-  return rows.find((row) => normalizeEmail(String(row.email ?? '')) === normalized);
+  return rows.find((row) => normalizeEmail(String(rowField(row, 'email') ?? '')) === normalized);
 }

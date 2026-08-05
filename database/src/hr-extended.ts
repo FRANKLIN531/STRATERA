@@ -7,7 +7,7 @@ import {
   policyFromSettings,
   validateLeaveRequest,
 } from './leave-entitlements';
-import { matchEmployeeByEmail, matchEmployeeByPhone } from './check-in-kiosk';
+import { matchEmployeeByEmail, matchEmployeeByPhone, rowField } from './check-in-kiosk';
 import type {
   HrSettings,
   LeaveBalance,
@@ -1265,8 +1265,8 @@ export class HrExtendedDb {
       };
     }
 
-    const name = row.name as string;
-    const status = row.status as string;
+    const name = String(rowField(row, 'name') ?? '');
+    const status = String(rowField(row, 'status') ?? 'Active');
 
     if (status === 'Terminated') {
       this.logAttendanceScan(identifier, identifierType, 'terminated', 'Employment not active', name);
@@ -1289,9 +1289,9 @@ export class HrExtendedDb {
     return {
       ok: true,
       employee: {
-        id: row.id as string,
+        id: String(rowField(row, 'id') ?? ''),
         name,
-        department: row.department as string,
+        department: String(rowField(row, 'department') ?? ''),
       },
       action,
       message:
@@ -1313,8 +1313,8 @@ export class HrExtendedDb {
       return { ok: false, error: 'Employee not found.' };
     }
 
-    const name = row.name as string;
-    const status = row.status as string;
+    const name = String(rowField(row, 'name') ?? '');
+    const status = String(rowField(row, 'status') ?? 'Active');
     if (status === 'Terminated') {
       return { ok: false, error: 'Your employment record is not active.' };
     }
