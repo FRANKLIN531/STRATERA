@@ -37,11 +37,21 @@ async function fetchKiosk<T>(path: string, options?: RequestInit): Promise<T> {
       ...(options?.headers ?? {}),
     },
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Kiosk API error (${res.status})`);
+  const text = await res.text();
+  let payload: unknown = null;
+  try {
+    payload = text ? JSON.parse(text) : null;
+  } catch {
+    /* non-JSON body */
   }
-  return res.json() as Promise<T>;
+  if (!res.ok) {
+    const fromJson =
+      payload && typeof payload === 'object' && 'error' in payload
+        ? String((payload as { error?: unknown }).error ?? '')
+        : '';
+    throw new Error(fromJson || text?.slice(0, 200) || `Kiosk API error (${res.status})`);
+  }
+  return (payload ?? {}) as T;
 }
 
 async function canReachKioskHttp(): Promise<boolean> {

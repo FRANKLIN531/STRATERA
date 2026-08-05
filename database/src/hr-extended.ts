@@ -925,9 +925,10 @@ export class HrExtendedDb {
     const name = employeeName.trim();
     const dates = this.todayDateKeys();
     const placeholders = dates.map(() => '?').join(', ');
+    // Use id (not SQLite-only rowid) so this works on SQL Server too.
     return this.db
       .prepare(
-        `SELECT * FROM attendance WHERE TRIM(employee) = ? AND date IN (${placeholders}) ORDER BY rowid DESC`,
+        `SELECT * FROM attendance WHERE employee = ? AND date IN (${placeholders}) ORDER BY id DESC`,
       )
       .all(name, ...dates) as Record<string, unknown>[];
   }
