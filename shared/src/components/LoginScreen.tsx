@@ -13,9 +13,6 @@ interface LoginScreenProps {
   onSignUp?: () => void;
 }
 
-const BOOTSTRAP_HINT =
-  'New here? Create an account below. Demo login: admin@stratera.com / admin123';
-
 export function LoginScreen({
   appTitle,
   appSubtitle,
@@ -24,7 +21,7 @@ export function LoginScreen({
   onForgotPassword,
   onSignUp,
 }: LoginScreenProps) {
-  const [email, setEmail] = useState(() => (initialSetupPending ? 'admin@stratera.com' : ''));
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -207,7 +204,7 @@ export function LoginScreen({
                 lineHeight: 1.5,
               }}
             >
-              {BOOTSTRAP_HINT}
+              New here? Create an account to get started.
             </p>
           )}
         </div>

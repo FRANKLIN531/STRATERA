@@ -12,9 +12,6 @@ interface ModuleLoginScreenProps {
   onBack: () => void;
 }
 
-const BOOTSTRAP_HINT =
-  'New here? Create an account. Demo: admin@stratera.com / admin123';
-
 export function ModuleLoginScreen({
   module,
   initialSetupPending,
@@ -23,7 +20,7 @@ export function ModuleLoginScreen({
   onSignUp,
   onBack,
 }: ModuleLoginScreenProps) {
-  const [email, setEmail] = useState(() => (initialSetupPending ? 'admin@stratera.com' : ''));
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -110,7 +107,7 @@ export function ModuleLoginScreen({
           </form>
 
           {initialSetupPending ? (
-            <p className="portal-demo-hint">{BOOTSTRAP_HINT}</p>
+            <p className="portal-auth-hint">New here? Create an account to get started.</p>
           ) : (
             <div style={{ textAlign: 'center', marginTop: 22 }}>
               <button type="button" className="portal-link" onClick={onResetPassword}>

@@ -27,6 +27,34 @@ const APP_DIR = path.join(ROOT, 'app');
 
 const PORT = Number(process.env.STRATERA_DEV_PORT || 5190);
 
+/** Load project .env into process.env so Electron inherits SQL Server settings. */
+function loadRootEnv() {
+  const envPath = path.join(ROOT, '.env');
+  if (!fs.existsSync(envPath)) return;
+  try {
+    const text = fs.readFileSync(envPath, 'utf8');
+    for (const rawLine of text.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+      const eq = line.indexOf('=');
+      if (eq <= 0) continue;
+      const key = line.slice(0, eq).trim();
+      let value = line.slice(eq + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"'))
+        || (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+      if (process.env[key] === undefined) process.env[key] = value;
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+loadRootEnv();
+
 const URL_LOCALHOST = `http://localhost:${PORT}/`;
 
 const URL_IPV4 = `http://127.0.0.1:${PORT}/`;

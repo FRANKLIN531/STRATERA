@@ -61,7 +61,7 @@ app.whenReady().then(async () => {
     console.error('STRATERA database failed to start:', err);
     dialog.showErrorBox(
       'STRATERA could not start',
-      `The database did not load, so HR features (including QR check-in) will not work.\n\n${message}\n\nTry running install.bat, then start-stratera.bat again.`,
+      `The SQL Server database did not connect, so the app cannot start.\n\n${message}\n\nCopy .env.example to .env, set your SQL Server details, then run start-stratera.bat again.`,
     );
     app.quit();
     return;

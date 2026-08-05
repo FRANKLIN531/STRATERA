@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import { createStrateraDatabase, loadDatabaseConfig, registerAllIpcHandlers } from '@stratera/database';
@@ -36,11 +36,22 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  const dbDir = path.join(app.getPath('appData'), 'STRATERA');
-  if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-  const dbPath = path.join(dbDir, 'stratera.db');
-  db = await createStrateraDatabase(loadDatabaseConfig(dbPath));
-  registerAllIpcHandlers(ipcMain, db);
+  try {
+    const dbDir = path.join(app.getPath('appData'), 'STRATERA');
+    if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
+    const dbPath = path.join(dbDir, 'stratera.db');
+    db = await createStrateraDatabase(loadDatabaseConfig(dbPath));
+    registerAllIpcHandlers(ipcMain, db);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('STRATERA database failed to start:', err);
+    dialog.showErrorBox(
+      'STRATERA could not start',
+      `The SQL Server database did not connect.\n\n${message}\n\nCopy .env.example to .env, set your SQL Server details, then try again.`,
+    );
+    app.quit();
+    return;
+  }
   createWindow();
 });
 

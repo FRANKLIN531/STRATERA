@@ -2,7 +2,7 @@
 
 Professional desktop software suite by **STRATERA R&D Software Group**.
 
-This monorepo contains two Electron-based desktop applications with a **shared SQLite database**, user authentication, and consistent STRATERA branding.
+This monorepo contains two Electron-based desktop applications with a **shared Microsoft SQL Server database**, user authentication, and consistent STRATERA branding.
 
 | Application | Description |
 |-------------|-------------|
@@ -13,12 +13,22 @@ This monorepo contains two Electron-based desktop applications with a **shared S
 
 - [Node.js](https://nodejs.org/) 18 or later
 - npm 9+
+- **Microsoft SQL Server** (Express, Developer, or full edition) with a database you can connect to
+
+## Database setup
+
+1. Copy `.env.example` to `.env` in the project root.
+2. Set your SQL Server connection values (`STRATERA_DB_HOST`, `STRATERA_DB_NAME`, `STRATERA_DB_USER`, `STRATERA_DB_PASSWORD`).
+3. Ensure SQL Server is running and allows TCP connections on the configured port (default `1433`).
+
+STRATERA uses **Microsoft SQL Server** by default (`STRATERA_DB_TYPE=mssql`). Tables are created automatically on first launch.
 
 ## Setup
 
 ```bash
 cd STRATERA
 npm install
+copy .env.example .env
 ```
 
 **Windows PowerShell:** If `npm` fails with a script execution policy error, use `npm.cmd` instead of `npm`, or double-click `install.bat` in the project folder.
@@ -41,21 +51,13 @@ npm run hr
 
 Or double-click `start-hr.bat`.
 
-## Demo Login Credentials
+**Unified portal (recommended):** double-click `start-stratera.bat`.
 
-| Email | Password | Access |
-|-------|----------|--------|
-| `admin@stratera.com` | `admin123` | Both apps |
-| `accountant@stratera.com` | `account123` | Accounting only |
-| `hr@stratera.com` | `hr123` | HR only |
+Create your own account from **Create an account** on the sign-in screen.
 
 ## Data Persistence
 
-Both applications share a single SQLite database stored locally at:
-
-`%APPDATA%/STRATERA/stratera.db`
-
-Data is seeded automatically on first launch with sample records.
+Both applications share a single **SQL Server** database configured in `.env`. Schema and seed data are applied automatically on first successful connection.
 
 ## Build Installers
 
@@ -80,7 +82,7 @@ Your colleague gets updates with `git pull` inside their cloned copy.
 ```
 STRATERA/
 ├── assets/           # Logo and brand assets
-├── database/         # @stratera/database — SQLite schema, queries, IPC handlers
+├── database/         # @stratera/database — SQL Server schema, queries, IPC handlers
 ├── shared/           # @stratera/shared — UI components, theme, API types
 ├── accounting/       # Accounting Electron app
 ├── hr/               # HR Electron app
@@ -93,11 +95,11 @@ STRATERA/
 - Secure login with role-based app access
 - Dashboard with live financial metrics from database
 - Chart of accounts, transactions, invoices
-- **Create transactions and invoices** (saved to SQLite)
+- **Create transactions and invoices** (saved to SQL Server)
 - **PDF export** — invoices and six financial reports (P&L, balance sheet, cash flow, etc.)
 - **Edit & delete** — transactions and invoices (payroll-synced transactions are protected)
-- **Email invoices** — opens your mail client with a pre-filled message
-- Company settings
+- **Email invoices** — send PDF invoices from the desktop
+- Company settings and backup/restore
 
 ### HR
 - Secure login with role-based app access
@@ -113,7 +115,7 @@ STRATERA/
 ## Tech Stack
 
 - **Electron** — cross-platform desktop runtime
-- **SQLite** (better-sqlite3) — local data persistence
+- **Microsoft SQL Server** (`mssql`) — primary data store
 - **React 18** + **TypeScript** — UI
 - **Vite** — build tooling
 - **npm workspaces** — monorepo

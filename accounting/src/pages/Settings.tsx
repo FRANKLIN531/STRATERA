@@ -256,7 +256,7 @@ export function Settings() {
               <ul className="small text-secondary mb-0 ps-3">
                 <li>Shared database with STRATERA HR for payroll sync</li>
                 <li>PDF invoices and six financial report types</li>
-                <li>Local SQLite storage — your data stays on your machine</li>
+                <li>Microsoft SQL Server storage for your business data</li>
               </ul>
             </div>
           </div>

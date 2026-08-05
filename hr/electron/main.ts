@@ -58,7 +58,7 @@ app.whenReady().then(async () => {
     console.error('STRATERA database failed to start:', err);
     dialog.showErrorBox(
       'STRATERA could not start',
-      `The database did not load.\n\n${message}\n\nTry running install.bat, then start-stratera.bat again.`,
+      `The SQL Server database did not connect.\n\n${message}\n\nCopy .env.example to .env, set your SQL Server details, then run start-stratera.bat again.`,
     );
     app.quit();
   }

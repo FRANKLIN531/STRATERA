@@ -5,6 +5,7 @@ export {
   loadDatabaseConfig,
   validateDatabaseConfig,
 } from './factory';
+export { loadEnvFile } from './config';
 export { registerAllIpcHandlers } from './ipc';
 export { registerAllIpcHandlers as registerIpcHandlers } from './ipc';
 export { startKioskHttpServer, stopKioskHttpServer, KIOSK_HTTP_PORT } from './kiosk-http-server';
