@@ -16,11 +16,6 @@ export function migrateHrExtensions(db: DbClient): void {
   addColumnIfMissing(db, 'leave_requests', 'manager_approved', 'INTEGER NOT NULL DEFAULT 0');
   addColumnIfMissing(db, 'leave_requests', 'medical_certificate_provided', 'INTEGER NOT NULL DEFAULT 0');
 
-  addColumnIfMissing(db, 'leave_balances', 'maternity_entitlement', 'REAL NOT NULL DEFAULT 0');
-  addColumnIfMissing(db, 'leave_balances', 'maternity_used', 'REAL NOT NULL DEFAULT 0');
-  addColumnIfMissing(db, 'leave_balances', 'paternity_entitlement', 'REAL NOT NULL DEFAULT 0');
-  addColumnIfMissing(db, 'leave_balances', 'paternity_used', 'REAL NOT NULL DEFAULT 0');
-
   db.exec(`
     CREATE TABLE IF NOT EXISTS attendance_scan_log (
       id TEXT PRIMARY KEY,
@@ -39,7 +34,7 @@ export function migrateHrExtensions(db: DbClient): void {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS hr_settings (
-      key TEXT PRIMARY KEY,
+      [key] TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS leave_balances (
@@ -84,7 +79,7 @@ export function migrateHrExtensions(db: DbClient): void {
       type TEXT NOT NULL,
       title TEXT NOT NULL,
       message TEXT NOT NULL,
-      read INTEGER NOT NULL DEFAULT 0,
+      [read] INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       link_page TEXT
     );
@@ -96,6 +91,11 @@ export function migrateHrExtensions(db: DbClient): void {
       body TEXT NOT NULL
     );
   `);
+
+  addColumnIfMissing(db, 'leave_balances', 'maternity_entitlement', 'REAL NOT NULL DEFAULT 0');
+  addColumnIfMissing(db, 'leave_balances', 'maternity_used', 'REAL NOT NULL DEFAULT 0');
+  addColumnIfMissing(db, 'leave_balances', 'paternity_entitlement', 'REAL NOT NULL DEFAULT 0');
+  addColumnIfMissing(db, 'leave_balances', 'paternity_used', 'REAL NOT NULL DEFAULT 0');
 
   seedDefaultSettings(db);
   seedDefaultTemplates(db);

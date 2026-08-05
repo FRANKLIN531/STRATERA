@@ -72,7 +72,7 @@ export class HrExtendedDb {
     const id = `NOT-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     this.db
       .prepare(
-        'INSERT INTO hr_notifications (id, type, title, message, read, created_at, link_page) VALUES (?, ?, ?, ?, 0, ?, ?)',
+        'INSERT INTO hr_notifications (id, type, title, message, [read], created_at, link_page) VALUES (?, ?, ?, ?, 0, ?, ?)',
       )
       .run(id, type, title, message, new Date().toISOString(), linkPage ?? null);
   }
@@ -485,12 +485,12 @@ export class HrExtendedDb {
   }
 
   markNotificationRead(id: string): boolean {
-    const result = this.db.prepare('UPDATE hr_notifications SET read = 1 WHERE id = ?').run(id);
+    const result = this.db.prepare('UPDATE hr_notifications SET [read] = 1 WHERE id = ?').run(id);
     return result.changes > 0;
   }
 
   markAllNotificationsRead(): boolean {
-    this.db.prepare('UPDATE hr_notifications SET read = 1 WHERE read = 0').run();
+    this.db.prepare('UPDATE hr_notifications SET [read] = 1 WHERE [read] = 0').run();
     return true;
   }
 

@@ -20,6 +20,8 @@ export function loadEnvFile(filePath?: string): void {
     filePath,
     path.join(process.cwd(), '.env'),
     path.join(process.cwd(), '..', '.env'),
+    // Electron main bundle lives in app/dist-electron → repo root is ../..
+    path.join(__dirname, '../../.env'),
     path.join(__dirname, '../../../.env'),
     path.join(__dirname, '../../../../.env'),
   ].filter((p): p is string => Boolean(p));

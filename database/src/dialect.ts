@@ -8,8 +8,12 @@ function quoteColumn(engine: DbEngine, column: string): string {
 }
 
 export function hasColumn(db: DbClient, table: string, column: string): boolean {
-  const target = column.toLowerCase();
-  return db.getTableColumns(table).some((c) => c.name.toLowerCase() === target);
+  try {
+    const target = column.toLowerCase();
+    return db.getTableColumns(table).some((c) => c.name.toLowerCase() === target);
+  } catch {
+    return false;
+  }
 }
 
 export function addColumnIfMissing(
@@ -18,7 +22,14 @@ export function addColumnIfMissing(
   column: string,
   definition: string,
 ): void {
-  if (hasColumn(db, table, column)) return;
+  try {
+    if (hasColumn(db, table, column)) return;
+  } catch {
+    return;
+  }
+
+  // Table may not exist yet on a fresh SQL Server database.
+  if (db.getTableColumns(table).length === 0) return;
 
   let ddl = definition;
   if (db.engine === 'postgresql') {
