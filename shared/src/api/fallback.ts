@@ -60,6 +60,7 @@ const DEV_USERS_KEY = 'stratera-dev-users';
 const DEV_VERIFIED_EMAIL_KEY = 'stratera-verified-credential-email';
 const DEV_SIGNUP_PENDING_KEY = 'stratera-dev-signup-pending';
 const DEV_DEPARTMENTS_KEY = 'stratera-dev-departments';
+const DEV_EMPLOYEES_KEY = 'stratera-dev-employees';
 const DEV_HR_SETTINGS_KEY = 'stratera-dev-hr-settings';
 
 function defaultHrSettings(): HrSettings {
@@ -186,6 +187,25 @@ function storeDepartments(list: Department[]) {
   }
 }
 
+function loadStoredEmployees(): Employee[] {
+  try {
+    const raw = localStorage.getItem(DEV_EMPLOYEES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Employee[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function storeEmployees(list: Employee[]) {
+  try {
+    localStorage.setItem(DEV_EMPLOYEES_KEY, JSON.stringify(list));
+  } catch {
+    /* ignore */
+  }
+}
+
 function removeStoredDemoUser(email: string) {
   try {
     const stored = loadStoredDemoUsers();
@@ -202,6 +222,8 @@ function clearStaleDevBrowserCaches() {
     localStorage.removeItem(DEV_SMTP_KEY);
     localStorage.removeItem(DEV_USERS_KEY);
     localStorage.removeItem(DEV_VERIFIED_EMAIL_KEY);
+    localStorage.removeItem(DEV_EMPLOYEES_KEY);
+    localStorage.removeItem(DEV_DEPARTMENTS_KEY);
     sessionStorage.removeItem('stratera-credential-verified-email');
   } catch {
     /* ignore */
@@ -648,7 +670,8 @@ function computeHrDashboardStats(): HrDashboardStats {
   };
 }
 
-const employees: Employee[] = [];
+const employees: Employee[] =
+  typeof localStorage !== 'undefined' ? loadStoredEmployees() : [];
 
 const jobPositions: JobPosition[] = [];
 
@@ -915,7 +938,11 @@ export function createHrFallbackApi(): HrApi {
       };
       employees.push(emp);
       const dept = departments.find((d) => d.name === input.department);
-      if (dept) dept.employees += 1;
+      if (dept) {
+        dept.employees += 1;
+        storeDepartments(departments);
+      }
+      storeEmployees(employees);
       return emp;
     },
     updateEmployee: async (id, input) => {
@@ -930,22 +957,29 @@ export function createHrFallbackApi(): HrApi {
         const newDept = departments.find((d) => d.name === input.department);
         if (oldDept) oldDept.employees -= 1;
         if (newDept) newDept.employees += 1;
+        storeDepartments(departments);
       }
       Object.assign(emp, { ...input, email, phone, role: input.department });
+      storeEmployees(employees);
       return emp;
     },
     deleteEmployee: async (id) => {
       const idx = employees.findIndex((e) => e.id === id);
       if (idx < 0) return false;
       const dept = departments.find((d) => d.name === employees[idx].department);
-      if (dept) dept.employees -= 1;
+      if (dept) {
+        dept.employees -= 1;
+        storeDepartments(departments);
+      }
       employees.splice(idx, 1);
+      storeEmployees(employees);
       return true;
     },
     updateEmployeeSalary: async (input: UpdateSalaryInput) => {
       const emp = employees.find((e) => e.id === input.employeeId);
       if (!emp) return null;
       emp.salary = input.baseSalary;
+      storeEmployees(employees);
       const bonus = input.bonus ?? 0;
       const pending = payroll.find((p) => p.employee === emp.name && p.status === 'Pending');
       if (pending) {

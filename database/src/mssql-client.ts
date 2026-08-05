@@ -1,7 +1,7 @@
 import sql from 'mssql';
 import type { DbClient, PreparedStatement } from './db-client';
 import type { DatabaseConfig } from './config';
-import { bindSql } from './sql-params';
+import { adaptSql } from './sql-params';
 import { waitForPromise } from './sync-wait';
 
 type Row = Record<string, unknown>;
@@ -36,7 +36,8 @@ export class MssqlDbClient implements DbClient {
 
   exec(batchSql: string): void {
     for (const statement of splitStatements(batchSql)) {
-      waitForPromise(this.pool.request().query(statement));
+      const text = adaptSql(statement, this.engine);
+      waitForPromise(this.pool.request().query(text));
     }
   }
 
@@ -56,7 +57,7 @@ export class MssqlDbClient implements DbClient {
   }
 
   prepare(rawSql: string): PreparedStatement {
-    const text = bindSql(rawSql, this.engine);
+    const text = adaptSql(rawSql, this.engine);
     return {
       run: (...params: unknown[]) => {
         const request = this.pool.request();

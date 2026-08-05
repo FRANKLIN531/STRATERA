@@ -19,10 +19,12 @@ if not exist "node_modules\vite\package.json" (
 )
 
 echo.
-echo  STRATERA will open at http://localhost:5190/
-echo  (also works at http://127.0.0.1:5190/)
+echo  STRATERA will open a desktop window AND a browser tab.
+echo  Use the DESKTOP window to add employees and run HR.
+echo  The browser tab is only a preview — employee data there
+echo  will not appear in attendance check-in.
 echo  Keep this window open while you use the app.
-echo  If the browser does not open, double-click open-stratera.bat
+echo  If nothing opens, double-click open-stratera.bat
 echo.
 echo  Do NOT use "npm run dev" in PowerShell — use this file instead.
 echo.
