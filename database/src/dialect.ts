@@ -65,7 +65,8 @@ export function sqlInsertIgnore(
   columns: string[],
   conflictColumn?: string,
 ): string {
-  const cols = columns.join(', ');
+  const quotedCols = columns.map((c) => quoteColumn(engine, c));
+  const cols = quotedCols.join(', ');
   const placeholders = columns.map(() => '?').join(', ');
   const conflict = conflictColumn ?? primaryKeyColumn(table);
 
@@ -78,8 +79,10 @@ export function sqlInsertIgnore(
   }
   if (engine === 'mssql') {
     const bracketed = quoteColumn(engine, conflict);
-    return `IF NOT EXISTS (SELECT 1 FROM ${table} WHERE ${bracketed} = ?)
-      INSERT INTO ${table} (${cols}) VALUES (${placeholders})`;
+    const selectCols = columns.map((c, i) => `? AS ${quoteColumn(engine, c)}`).join(', ');
+    return `INSERT INTO ${table} (${cols})
+      SELECT * FROM (SELECT ${selectCols}) AS source
+      WHERE NOT EXISTS (SELECT 1 FROM ${table} WHERE ${bracketed} = source.${bracketed})`;
   }
   return `INSERT INTO ${table} (${cols}) VALUES (${placeholders})`;
 }
@@ -88,17 +91,17 @@ export function sqlUpsertKeyValue(engine: DbEngine, table: string, keyCol: strin
   const key = quoteColumn(engine, keyCol);
   const value = quoteColumn(engine, valueCol);
   if (engine === 'sqlite') {
-    return `INSERT OR REPLACE INTO ${table} (${keyCol}, ${valueCol}) VALUES (?, ?)`;
+    return `INSERT OR REPLACE INTO ${table} (${key}, ${value}) VALUES (?, ?)`;
   }
   if (engine === 'postgresql') {
     return `INSERT INTO ${table} (${key}, ${value}) VALUES (?, ?)
       ON CONFLICT (${key}) DO UPDATE SET ${value} = EXCLUDED.${value}`;
   }
   return `MERGE ${table} AS target
-    USING (SELECT ? AS ${keyCol}, ? AS ${valueCol}) AS source
-    ON target.${key} = source.${keyCol}
-    WHEN MATCHED THEN UPDATE SET ${value} = source.${valueCol}
-    WHEN NOT MATCHED THEN INSERT (${key}, ${value}) VALUES (source.${keyCol}, source.${valueCol});`;
+    USING (SELECT ? AS ${key}, ? AS ${value}) AS source
+    ON target.${key} = source.${key}
+    WHEN MATCHED THEN UPDATE SET ${value} = source.${value}
+    WHEN NOT MATCHED THEN INSERT (${key}, ${value}) VALUES (source.${key}, source.${value});`;
 }
 
 export function sqlUpsertLeaveBalance(engine: DbEngine): string {

@@ -25,8 +25,11 @@ export function seedDatabase(db: DbClient): void {
     ['ACC-005', 'Revenue', 'Income', 512000, 'USD'],
     ['ACC-006', 'Operating Expenses', 'Expense', 287600, 'USD'],
   ];
+  const accountExists = db.prepare('SELECT 1 AS ok FROM accounts WHERE id = ?');
   const insertAccount = db.prepare('INSERT INTO accounts (id, name, type, balance, currency) VALUES (?, ?, ?, ?, ?)');
-  for (const a of accounts) insertAccount.run(...a);
+  for (const a of accounts) {
+    if (!accountExists.get(a[0])) insertAccount.run(...a);
+  }
 
   const transactions = [
     ['TXN-1042', '2026-06-12', 'Client payment - Apex Corp', 'Accounts Receivable', 'Income', 12500, 'Completed'],

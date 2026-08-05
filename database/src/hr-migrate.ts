@@ -149,9 +149,13 @@ function seedDefaultSettings(db: DbClient): void {
     checkInSiteName: 'Main Office',
     checkInSiteToken: '',
   };
-  const insert = db.prepare(sqlInsertIgnore(db.engine, 'hr_settings', ['key', 'value'], 'key'));
+  const keyCol = db.engine === 'postgresql' ? '"key"' : '[key]';
+  const selectExisting = db.prepare(`SELECT 1 AS ok FROM hr_settings WHERE ${keyCol} = ?`);
+  const insert = db.prepare(`INSERT INTO hr_settings (${keyCol}, value) VALUES (?, ?)`);
   for (const [key, value] of Object.entries(defaults)) {
-    insert.run(key, value);
+    if (!selectExisting.get(key)) {
+      insert.run(key, value);
+    }
   }
 }
 

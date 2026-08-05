@@ -78,7 +78,8 @@ export class HrExtendedDb {
   }
 
   private getSetting(key: string, fallback = ''): string {
-    const row = this.db.prepare('SELECT value FROM hr_settings WHERE key = ?').get(key) as
+    const keyCol = this.db.engine === 'mssql' || this.db.engine === 'sqlite' ? '[key]' : '"key"';
+    const row = this.db.prepare(`SELECT value FROM hr_settings WHERE ${keyCol} = ?`).get(key) as
       | { value: string }
       | undefined;
     return row?.value ?? fallback;
@@ -1142,7 +1143,7 @@ export class HrExtendedDb {
 
   enhanceDashboardStats(base: HrDashboardStats): HrDashboardStats {
     const unread = this.db
-      .prepare('SELECT COUNT(*) as count FROM hr_notifications WHERE read = 0')
+      .prepare('SELECT COUNT(*) as count FROM hr_notifications WHERE [read] = 0')
       .get() as { count: number };
     return {
       ...base,
