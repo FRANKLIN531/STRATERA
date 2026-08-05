@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type FormEvent } from 'react';
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import { strateraTheme } from '../theme';
 import { Button } from './Button';
 import { StrateraBrand } from './StrateraBrand';
@@ -25,6 +25,18 @@ export function LoginScreen({
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [allowAutofill, setAllowAutofill] = useState(false);
+
+  // Keep fields blank: browser password managers often inject old demo credentials.
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+    const clear = window.setTimeout(() => {
+      setEmail('');
+      setPassword('');
+    }, 150);
+    return () => window.clearTimeout(clear);
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -115,17 +127,20 @@ export function LoginScreen({
             <p style={{ fontSize: 13, color: strateraTheme.colors.gray500, marginTop: 6 }}>{appSubtitle}</p>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 18 }}>
+          <form onSubmit={handleSubmit} autoComplete="off" style={{ display: 'grid', gap: 18 }}>
             <label style={{ display: 'grid', gap: 6 }}>
               <span style={{ fontSize: 13, fontWeight: 500, color: strateraTheme.colors.gray600 }}>Email</span>
               <input
                 type="email"
+                name="stratera-login-email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={() => setAllowAutofill(true)}
                 required
                 style={inputStyle}
-                placeholder="name@company.com"
-                autoComplete="email"
+                placeholder="Email address"
+                autoComplete="off"
+                readOnly={!allowAutofill}
               />
             </label>
 
@@ -133,12 +148,15 @@ export function LoginScreen({
               <span style={{ fontSize: 13, fontWeight: 500, color: strateraTheme.colors.gray600 }}>Password</span>
               <input
                 type="password"
+                name="stratera-login-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setAllowAutofill(true)}
                 required
                 style={inputStyle}
-                placeholder="Enter your password"
-                autoComplete="current-password"
+                placeholder="Password"
+                autoComplete="new-password"
+                readOnly={!allowAutofill}
               />
             </label>
 

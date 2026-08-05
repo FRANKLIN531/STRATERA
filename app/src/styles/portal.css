@@ -774,6 +774,14 @@
   background: #fff;
 }
 
+.portal-input:-webkit-autofill,
+.portal-input:-webkit-autofill:hover,
+.portal-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  box-shadow: 0 0 0 1000px #fff inset;
+  transition: background-color 99999s ease-in-out 0s;
+}
+
 .portal-form-error {
   font-size: 13px;
   color: #ef4444;

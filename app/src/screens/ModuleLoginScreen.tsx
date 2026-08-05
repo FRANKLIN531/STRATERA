@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Button, StrateraBrand, strateraTheme, validateEmail, BackLink } from '@stratera/shared';
 import type { DesktopModule } from '../types';
 import { MODULE_LABELS } from '../types';
@@ -24,8 +24,20 @@ export function ModuleLoginScreen({
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [allowAutofill, setAllowAutofill] = useState(false);
   const labels = MODULE_LABELS[module];
   const accent = module === 'accounting' ? '#0a1f38' : '#10B981';
+
+  // Keep fields blank: browser password managers often inject old demo credentials.
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+    const clear = window.setTimeout(() => {
+      setEmail('');
+      setPassword('');
+    }, 150);
+    return () => window.clearTimeout(clear);
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -74,16 +86,24 @@ export function ModuleLoginScreen({
             <p style={{ fontSize: 13, color: strateraTheme.colors.gray500, marginTop: 6 }}>{labels.subtitle}</p>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 18 }}>
+          <form
+            onSubmit={handleSubmit}
+            autoComplete="off"
+            style={{ display: 'grid', gap: 18 }}
+          >
             <label style={{ display: 'grid', gap: 6 }}>
               <span className="portal-field-label">Email address</span>
               <input
                 type="email"
                 className="portal-input"
+                name="stratera-login-email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={() => setAllowAutofill(true)}
                 required
-                placeholder="you@gmail.com"
+                placeholder="Email address"
+                autoComplete="off"
+                readOnly={!allowAutofill}
               />
             </label>
 
@@ -92,10 +112,14 @@ export function ModuleLoginScreen({
               <input
                 type="password"
                 className="portal-input"
+                name="stratera-login-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setAllowAutofill(true)}
                 required
-                placeholder="Enter your password"
+                placeholder="Password"
+                autoComplete="new-password"
+                readOnly={!allowAutofill}
               />
             </label>
 
