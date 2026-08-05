@@ -10,7 +10,7 @@ import { Departments } from './pages/Departments';
 import { Reports } from './pages/Reports';
 import { Messages } from './pages/Messages';
 import { Settings } from './pages/Settings';
-import { getHrApi, getAuthApi, isHrDatabaseConnected } from './api';
+import { getHrApi, getAuthApi, isHrDatabaseConnected, refreshHrDatabaseConnection } from './api';
 import { HrSettingsProvider } from './context/HrSettingsContext';
 import { clearConfidentialAccess } from './context/ConfidentialAccessContext';
 import { HrAppShell } from './components/HrAppShell';
@@ -59,10 +59,12 @@ export default function App() {
   const [authScreen, setAuthScreen] = useState<'login' | 'reset' | 'signup'>('login');
   const [initialSetupPending, setInitialSetupPending] = useState(true);
   const [signUpVerificationEnabled, setSignUpVerificationEnabled] = useState(true);
+  const [dbConnected, setDbConnected] = useState(isHrDatabaseConnected());
   const api = getHrApi();
   const authApi = getAuthApi();
 
   useEffect(() => {
+    refreshHrDatabaseConnection().then(setDbConnected);
     api.getCurrentUser().then((u) => {
       setUser(u);
       api.isInitialSetupPending().then(setInitialSetupPending);
@@ -147,7 +149,7 @@ export default function App() {
         userName={user.name}
         onLogout={handleLogout}
       >
-        {!isHrDatabaseConnected() && (
+        {!dbConnected && (
           <div
             role="status"
             style={{
@@ -161,10 +163,9 @@ export default function App() {
               lineHeight: 1.45,
             }}
           >
-            You are in the <strong>browser tab</strong>, not the STRATERA desktop window.
-            Employees here are only saved in this browser — attendance check-in looks at the
-            desktop database and will not find them. Close this tab and use the STRATERA desktop
-            window (opened by <code>start-stratera.bat</code>) to add employees.
+            Browser mode cannot reach the SQL database. Keep the <strong>STRATERA desktop window</strong> open
+            (from <code>start-stratera.bat</code>), then refresh this page. Employees and check-in use that
+            desktop database.
           </div>
         )}
         <HrAppShell user={user} activeNav={activeNav} onNavChange={setActiveNav} pages={pages} />

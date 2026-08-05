@@ -1,12 +1,19 @@
 import type { AccountingApi, HrApi } from '@stratera/shared';
 
-import { createAccountingFallbackApi, createHrFallbackApi } from '@stratera/shared';
+import {
+  createAccountingFallbackApi,
+  createHrFallbackApi,
+  createDesktopBackedHrApi,
+  createDesktopBackedAccountingApi,
+} from '@stratera/shared';
 
 
 
 let accountingFallback: AccountingApi | null = null;
 
 let hrFallback: HrApi | null = null;
+let hrDesktopBacked: HrApi | null = null;
+let accountingDesktopBacked: AccountingApi | null = null;
 
 
 
@@ -44,8 +51,10 @@ export function getAccountingApi(): AccountingApi {
   }
 
   if (!accountingFallback) accountingFallback = createAccountingFallbackApi();
-
-  return accountingFallback;
+  if (!accountingDesktopBacked) {
+    accountingDesktopBacked = createDesktopBackedAccountingApi(accountingFallback);
+  }
+  return accountingDesktopBacked;
 }
 
 function mergeNativeMethod<K extends keyof AccountingApi>(
@@ -111,7 +120,8 @@ export function getHrApi(): HrApi {
   }
 
   if (!hrFallback) hrFallback = createHrFallbackApi();
-  return hrFallback;
+  if (!hrDesktopBacked) hrDesktopBacked = createDesktopBackedHrApi(hrFallback);
+  return hrDesktopBacked;
 }
 
 function mergeHrMethod<K extends keyof HrApi>(native: HrApi, key: K): HrApi[K] {

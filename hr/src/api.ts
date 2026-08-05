@@ -1,14 +1,22 @@
 import type { HrApi } from '@stratera/shared';
-
-import { createHrFallbackApi } from '@stratera/shared';
-
-
+import {
+  createHrFallbackApi,
+  createDesktopBackedHrApi,
+  canReachDesktopApi,
+} from '@stratera/shared';
 
 let hrFallback: HrApi | null = null;
+let hrDesktopBacked: HrApi | null = null;
+let desktopReachKnown = false;
 
 function getHrFallback(): HrApi {
   if (!hrFallback) hrFallback = createHrFallbackApi();
   return hrFallback;
+}
+
+function getDesktopBackedHrApi(): HrApi {
+  if (!hrDesktopBacked) hrDesktopBacked = createDesktopBackedHrApi(getHrFallback());
+  return hrDesktopBacked;
 }
 
 /** Use native IPC when available; fall back if handler missing or method undefined. */
@@ -81,7 +89,8 @@ export function getHrApi(): HrApi {
     };
   }
 
-  return getHrFallback();
+  // Browser: prefer the running desktop SQL database over localStorage fallback.
+  return getDesktopBackedHrApi();
 }
 
 function hasNativeDatabase(api: { login?: unknown } | undefined): boolean {
@@ -96,7 +105,18 @@ export function isHrDatabaseConnected(): boolean {
   const native = window.stratera?.isElectron
     ? window.stratera.hr ?? (window.stratera.api as HrApi | undefined)
     : undefined;
-  return Boolean(native && hasNativeDatabase(native));
+  if (native && hasNativeDatabase(native)) return true;
+  return desktopReachKnown;
+}
+
+/** Probe whether the desktop SQL API is reachable (for browser sessions). */
+export async function refreshHrDatabaseConnection(): Promise<boolean> {
+  if (window.stratera?.isElectron) {
+    desktopReachKnown = true;
+    return true;
+  }
+  desktopReachKnown = await canReachDesktopApi(true);
+  return desktopReachKnown;
 }
 
 /** Verify the signed-in user's password for confidential HR pages. */
@@ -139,45 +159,27 @@ export async function verifyUserPassword(
   }
 }
 
-
-
 function verificationErrorMessage(err: unknown): string {
-
   const msg = err instanceof Error ? err.message : String(err ?? '');
-
   if (!msg) return 'Unable to verify password. Try again.';
-
   if (msg.includes('verifyPassword') && msg.includes('not a function')) {
     return 'Password verification is unavailable. Close STRATERA completely and restart start-stratera.bat.';
   }
-
   if (msg.includes('No handler registered') || msg.includes('Error invoking remote method')) {
-
-    return 'Sign-up needs a fresh STRATERA desktop session. Close every STRATERA window, stop the terminal (Ctrl+C), then run start-stratera.bat again. Use the STRATERA desktop window — not the browser tab — to create an account.';
-
+    return 'Sign-up needs a fresh STRATERA desktop session. Close every STRATERA window, stop the terminal (Ctrl+C), then run start-stratera.bat again.';
   }
-
   return msg;
-
 }
 
-
-
 export function getAuthApi() {
-
   const api = getHrApi();
 
   return {
-
     login: api.login,
-
     logout: api.logout,
-
     getCurrentUser: api.getCurrentUser,
-
     isInitialSetupPending: api.isInitialSetupPending,
-
-    sendPasswordResetCode: async (email) => {
+    sendPasswordResetCode: async (email: string) => {
       try {
         const result = await api.sendPasswordResetCode(email);
         return result ?? { ok: false as const, error: 'Could not send reset code.' };
@@ -185,8 +187,7 @@ export function getAuthApi() {
         return { ok: false as const, error: verificationErrorMessage(err) };
       }
     },
-
-    completePasswordResetWithCode: async (email, code, newPassword) => {
+    completePasswordResetWithCode: async (email: string, code: string, newPassword: string) => {
       try {
         const result = await api.completePasswordResetWithCode(email, code, newPassword);
         return result ?? { ok: false as const, error: 'Could not reset password.' };
@@ -194,47 +195,29 @@ export function getAuthApi() {
         return { ok: false as const, error: verificationErrorMessage(err) };
       }
     },
-
-    completeCredentialUpdate: async (email, newPassword) => {
+    completeCredentialUpdate: async (email: string, newPassword: string) => {
       try {
         return await api.completeCredentialUpdate(email, newPassword);
       } catch (err) {
         throw err instanceof Error ? err : new Error('Unable to save credentials.');
       }
     },
-
-    sendCredentialEmailVerification: async (email: string, smtp) => {
-
+    sendCredentialEmailVerification: async (email: string, smtp: unknown) => {
       try {
-
-        const result = await api.sendCredentialEmailVerification(email, smtp);
-
+        const result = await api.sendCredentialEmailVerification(email, smtp as never);
         return result ?? { ok: false as const, error: 'Verification failed.' };
-
       } catch (err) {
-
         return { ok: false as const, error: verificationErrorMessage(err) };
-
       }
-
     },
-
     verifyCredentialEmailCode: async (email: string, code: string) => {
-
       try {
-
         const result = await api.verifyCredentialEmailCode(email, code);
-
         return result ?? { ok: false as const, error: 'Verification failed.' };
-
       } catch (err) {
-
         return { ok: false as const, error: verificationErrorMessage(err) };
-
       }
-
     },
-
     isSignUpVerificationEnabled: async () => {
       try {
         return await api.isSignUpVerificationEnabled();
@@ -242,8 +225,7 @@ export function getAuthApi() {
         return false;
       }
     },
-
-    signUpStart: async (input) => {
+    signUpStart: async (input: Parameters<HrApi['signUpStart']>[0]) => {
       const native = window.stratera?.hr ?? (window.stratera?.api as HrApi | undefined);
       if (window.stratera?.isElectron && typeof native?.signUpStart === 'function') {
         try {
@@ -258,8 +240,7 @@ export function getAuthApi() {
         return { ok: false as const, error: verificationErrorMessage(err) };
       }
     },
-
-    signUpComplete: async (email, code) => {
+    signUpComplete: async (email: string, code: string) => {
       const native = window.stratera?.hr ?? (window.stratera?.api as HrApi | undefined);
       if (window.stratera?.isElectron && typeof native?.signUpComplete === 'function') {
         try {
@@ -276,9 +257,5 @@ export function getAuthApi() {
         return { ok: false, error: verificationErrorMessage(err) };
       }
     },
-
   };
-
 }
-
-

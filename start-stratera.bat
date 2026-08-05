@@ -19,11 +19,9 @@ if not exist "node_modules\vite\package.json" (
 )
 
 echo.
-echo  STRATERA will open a desktop window AND a browser tab.
-echo  Use the DESKTOP window to add employees and run HR.
-echo  The browser tab is only a preview — employee data there
-echo  will not appear in attendance check-in.
-echo  Keep this window open while you use the app.
+echo  STRATERA opens a desktop window (SQL database) and a browser tab.
+echo  Keep the DESKTOP window open — the browser uses it for live data.
+echo  Keep this command window open while you use the app.
 echo  If nothing opens, double-click open-stratera.bat
 echo.
 echo  Do NOT use "npm run dev" in PowerShell — use this file instead.

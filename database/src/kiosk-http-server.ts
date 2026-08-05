@@ -1,6 +1,7 @@
 import http from 'node:http';
 import type { StrateraDatabase } from './database';
 import type { CheckInConfirmInput, CheckInLookupInput } from './types';
+import { invokeDesktopRpc } from './desktop-rpc';
 
 export const KIOSK_HTTP_PORT = Number(process.env.STRATERA_KIOSK_HTTP_PORT || 5192);
 
@@ -59,8 +60,26 @@ export function startKioskHttpServer(db: StrateraDatabase): http.Server | null {
       const path = url.pathname;
 
       try {
-        if (path === '/api/kiosk/health' && req.method === 'GET') {
-          sendJson(res, 200, { ok: true, service: 'stratera-kiosk' });
+        if ((path === '/api/kiosk/health' || path === '/api/health') && req.method === 'GET') {
+          sendJson(res, 200, { ok: true, service: 'stratera-desktop', database: true });
+          return;
+        }
+
+        if (path === '/api/rpc' && req.method === 'POST') {
+          const body = await readJsonBody(req);
+          const method = String(body.method ?? '');
+          const args = Array.isArray(body.args) ? body.args : [];
+          if (!method) {
+            sendJson(res, 400, { ok: false, error: 'method is required' });
+            return;
+          }
+          try {
+            const result = await invokeDesktopRpc(db, method, args);
+            sendJson(res, 200, { ok: true, result });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : 'RPC error';
+            sendJson(res, 400, { ok: false, error: message });
+          }
           return;
         }
 
@@ -95,21 +114,21 @@ export function startKioskHttpServer(db: StrateraDatabase): http.Server | null {
     server.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE') {
         console.warn(
-          `STRATERA kiosk API port ${KIOSK_HTTP_PORT} is already in use — phone QR check-in unavailable. Close other STRATERA windows and restart.`,
+          `STRATERA desktop API port ${KIOSK_HTTP_PORT} is already in use — browser/phone access unavailable. Close other STRATERA windows and restart.`,
         );
         return;
       }
-      console.error('STRATERA kiosk HTTP server error:', err);
+      console.error('STRATERA desktop HTTP server error:', err);
     });
 
     server.listen(KIOSK_HTTP_PORT, '0.0.0.0', () => {
       activeServer = server;
-      console.log(`STRATERA kiosk API listening on http://0.0.0.0:${KIOSK_HTTP_PORT}`);
+      console.log(`STRATERA desktop API listening on http://0.0.0.0:${KIOSK_HTTP_PORT}`);
     });
 
     return server;
   } catch (err) {
-    console.error('STRATERA kiosk HTTP server failed:', err);
+    console.error('STRATERA desktop HTTP server failed:', err);
     return null;
   }
 }

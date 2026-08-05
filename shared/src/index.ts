@@ -29,6 +29,13 @@ export { useTableSort } from './hooks/useTableSort';
 export type * from './api/types';
 export { createAccountingFallbackApi, createHrFallbackApi } from './api/fallback';
 export {
+  canReachDesktopApi,
+  createDesktopBackedHrApi,
+  createDesktopBackedAccountingApi,
+  desktopApiBaseUrl,
+  invalidateDesktopApiReachCache,
+} from './api/desktopHttpClient';
+export {
   exportInvoicePdf,
   buildInvoicePdf,
   invoicePdfFilename,
